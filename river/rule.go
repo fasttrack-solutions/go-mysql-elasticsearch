@@ -14,8 +14,6 @@ type Rule struct {
 	Schema string   `toml:"schema"`
 	Table  string   `toml:"table"`
 	Index  string   `toml:"index"`
-	Type   string   `toml:"type"`
-	Parent string   `toml:"parent"`
 	ID     []string `toml:"id"`
 
 	// Default, a MySQL table field name is mapped to Elasticsearch field name.
@@ -40,9 +38,7 @@ func newDefaultRule(schema string, table string) *Rule {
 	r.Schema = schema
 	r.Table = table
 
-	lowerTable := strings.ToLower(table)
-	r.Index = lowerTable
-	r.Type = lowerTable
+	r.Index = strings.ToLower(table)
 
 	r.FieldMapping = make(map[string]string)
 
@@ -58,14 +54,8 @@ func (r *Rule) prepare() error {
 		r.Index = r.Table
 	}
 
-	if len(r.Type) == 0 {
-		r.Type = r.Index
-	}
-
-	// ES must use a lower-case Type
-	// Here we also use for Index
+	// ES must use a lower-case Index
 	r.Index = strings.ToLower(r.Index)
-	r.Type = strings.ToLower(r.Type)
 
 	return nil
 }

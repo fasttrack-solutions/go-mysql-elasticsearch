@@ -8,9 +8,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/fasttrack-solutions/go-mysql-elasticsearch/elastic"
 	"github.com/juju/errors"
 	"github.com/siddontang/go-log/log"
-	"github.com/siddontang/go-mysql-elasticsearch/elastic"
 	"github.com/siddontang/go-mysql/canal"
 	"github.com/siddontang/go-mysql/mysql"
 	"github.com/siddontang/go-mysql/replication"
@@ -186,14 +186,7 @@ func (r *River) makeRequest(rule *Rule, action string, rows [][]interface{}) ([]
 			return nil, errors.Trace(err)
 		}
 
-		parentID := ""
-		if len(rule.Parent) > 0 {
-			if parentID, err = r.getParentID(rule, values, rule.Parent); err != nil {
-				return nil, errors.Trace(err)
-			}
-		}
-
-		req := &elastic.BulkRequest{Index: rule.Index, Type: rule.Type, ID: id, Parent: parentID, Pipeline: rule.Pipeline}
+		req := &elastic.BulkRequest{Index: rule.Index, ID: id, Pipeline: rule.Pipeline}
 
 		if action == canal.DeleteAction {
 			req.Action = elastic.ActionDelete
@@ -236,23 +229,13 @@ func (r *River) makeUpdateRequest(rule *Rule, rows [][]interface{}) ([]*elastic.
 			return nil, errors.Trace(err)
 		}
 
-		beforeParentID, afterParentID := "", ""
-		if len(rule.Parent) > 0 {
-			if beforeParentID, err = r.getParentID(rule, rows[i], rule.Parent); err != nil {
-				return nil, errors.Trace(err)
-			}
-			if afterParentID, err = r.getParentID(rule, rows[i+1], rule.Parent); err != nil {
-				return nil, errors.Trace(err)
-			}
-		}
+		req := &elastic.BulkRequest{Index: rule.Index, ID: beforeID}
 
-		req := &elastic.BulkRequest{Index: rule.Index, Type: rule.Type, ID: beforeID, Parent: beforeParentID}
-
-		if beforeID != afterID || beforeParentID != afterParentID {
+		if beforeID != afterID {
 			req.Action = elastic.ActionDelete
 			reqs = append(reqs, req)
 
-			req = &elastic.BulkRequest{Index: rule.Index, Type: rule.Type, ID: afterID, Parent: afterParentID, Pipeline: rule.Pipeline}
+			req = &elastic.BulkRequest{Index: rule.Index, ID: afterID, Pipeline: rule.Pipeline}
 			r.makeInsertReqData(req, rule, rows[i+1])
 
 			r.st.DeleteNum.Add(1)
@@ -460,15 +443,6 @@ func (r *River) getDocID(rule *Rule, row []interface{}) (string, error) {
 	}
 
 	return buf.String(), nil
-}
-
-func (r *River) getParentID(rule *Rule, row []interface{}, columnName string) (string, error) {
-	index := rule.TableInfo.FindColumn(columnName)
-	if index < 0 {
-		return "", errors.Errorf("parent id not found %s(%s)", rule.TableInfo.Name, columnName)
-	}
-
-	return fmt.Sprint(row[index]), nil
 }
 
 func (r *River) doBulk(reqs []*elastic.BulkRequest) error {

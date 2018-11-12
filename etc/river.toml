@@ -65,21 +65,19 @@ tables = ["t", "t_[0-9]{4}", "tfield", "tfilter"]
 # | name  | varchar(256) | YES  |     | NULL    |       |
 # +-------+--------------+------+-----+---------+-------+
 # 
-# The table `t` will be synced to ES index `test` and type `t`.
+# The table `t` will be synced to ES index `test`.
 [[rule]]
 schema = "test"
 table = "t"
 index = "test"
-type = "t"
 
 # Wildcard table rule, the wildcard table must be in source tables 
-# All tables which match the wildcard format will be synced to ES index `test` and type `t`.
+# All tables which match the wildcard format will be synced to ES index `test`.
 # In this example, all tables must have same schema with above table `t`;
 [[rule]]
 schema = "test"
 table = "t_[0-9]{4}"
 index = "test"
-type = "t"
 
 # Simple field rule 
 #
@@ -96,7 +94,6 @@ type = "t"
 schema = "test"
 table = "tfield"
 index = "test"
-type = "tfield"
 
 [rule.field]
 # Map column `id` to ES field `es_id`
@@ -122,7 +119,6 @@ keywords=",list"
 schema = "test"
 table = "tfilter"
 index = "test"
-type = "tfilter"
 
 # Only sync following columns
 filter = ["id", "name"]
@@ -142,7 +138,6 @@ filter = ["id", "name"]
 schema = "test"
 table = "tid_[0-9]{4}"
 index = "test"
-type = "t"
 # The es doc's id will be `id`:`tag`
 # It is useful for merge muliple table into one type while theses tables have same PK 
 id = ["id", "tag"]

@@ -82,9 +82,7 @@ const (
 type BulkRequest struct {
 	Action   string
 	Index    string
-	Type     string
 	ID       string
-	Parent   string
 	Pipeline string
 
 	Data map[string]interface{}
@@ -93,22 +91,20 @@ type BulkRequest struct {
 func (r *BulkRequest) bulk(buf *bytes.Buffer) error {
 	meta := make(map[string]map[string]string)
 	metaData := make(map[string]string)
+
 	if len(r.Index) > 0 {
 		metaData["_index"] = r.Index
-	}
-	if len(r.Type) > 0 {
-		metaData["_type"] = r.Type
 	}
 
 	if len(r.ID) > 0 {
 		metaData["_id"] = r.ID
 	}
-	if len(r.Parent) > 0 {
-		metaData["_parent"] = r.Parent
-	}
+
 	if len(r.Pipeline) > 0 {
 		metaData["pipeline"] = r.Pipeline
 	}
+
+	metaData["_type"] = "_doc"
 
 	meta[r.Action] = metaData
 
@@ -266,7 +262,7 @@ func (c *Client) DoBulk(url string, items []*BulkRequest) (*BulkResponse, error)
 }
 
 // CreateMapping creates a ES mapping.
-func (c *Client) CreateMapping(index string, docType string, mapping map[string]interface{}) error {
+func (c *Client) CreateMapping(index string, mapping map[string]interface{}) error {
 	reqURL := fmt.Sprintf("%s://%s/%s", c.Protocol, c.Addr,
 		url.QueryEscape(index))
 
@@ -286,19 +282,15 @@ func (c *Client) CreateMapping(index string, docType string, mapping map[string]
 		return errors.Errorf("Error: %s, code: %d", http.StatusText(r.Code), r.Code)
 	}
 
-	reqURL = fmt.Sprintf("%s://%s/%s/%s/_mapping", c.Protocol, c.Addr,
-		url.QueryEscape(index),
-		url.QueryEscape(docType))
+	reqURL = fmt.Sprintf("%s://%s/%s/_mapping/_doc", c.Protocol, c.Addr, url.QueryEscape(index))
 
 	_, err = c.Do("POST", reqURL, mapping)
 	return errors.Trace(err)
 }
 
 // GetMapping gets the mapping.
-func (c *Client) GetMapping(index string, docType string) (*MappingResponse, error) {
-	reqURL := fmt.Sprintf("%s://%s/%s/%s/_mapping", c.Protocol, c.Addr,
-		url.QueryEscape(index),
-		url.QueryEscape(docType))
+func (c *Client) GetMapping(index string) (*MappingResponse, error) {
+	reqURL := fmt.Sprintf("%s://%s/%s/_mapping/_doc", c.Protocol, c.Addr, url.QueryEscape(index))
 	buf := bytes.NewBuffer(nil)
 	resp, err := c.DoRequest("GET", reqURL, buf)
 
@@ -341,20 +333,18 @@ func (c *Client) DeleteIndex(index string) error {
 }
 
 // Get gets the item by id.
-func (c *Client) Get(index string, docType string, id string) (*Response, error) {
-	reqURL := fmt.Sprintf("%s://%s/%s/%s/%s", c.Protocol, c.Addr,
+func (c *Client) Get(index string, id string) (*Response, error) {
+	reqURL := fmt.Sprintf("%s://%s/%s/_doc/%s", c.Protocol, c.Addr,
 		url.QueryEscape(index),
-		url.QueryEscape(docType),
 		url.QueryEscape(id))
 
 	return c.Do("GET", reqURL, nil)
 }
 
 // Update creates or updates the data
-func (c *Client) Update(index string, docType string, id string, data map[string]interface{}) error {
-	reqURL := fmt.Sprintf("%s://%s/%s/%s/%s", c.Protocol, c.Addr,
+func (c *Client) Update(index string, id string, data map[string]interface{}) error {
+	reqURL := fmt.Sprintf("%s://%s/%s/_doc/%s", c.Protocol, c.Addr,
 		url.QueryEscape(index),
-		url.QueryEscape(docType),
 		url.QueryEscape(id))
 
 	r, err := c.Do("PUT", reqURL, data)
@@ -369,12 +359,9 @@ func (c *Client) Update(index string, docType string, id string, data map[string
 	return errors.Errorf("Error: %s, code: %d", http.StatusText(r.Code), r.Code)
 }
 
-// Exists checks whether id exists or not.
-func (c *Client) Exists(index string, docType string, id string) (bool, error) {
-	reqURL := fmt.Sprintf("%s://%s/%s/%s/%s", c.Protocol, c.Addr,
-		url.QueryEscape(index),
-		url.QueryEscape(docType),
-		url.QueryEscape(id))
+// Exists checks whether indice exists or not.
+func (c *Client) Exists(index string) (bool, error) {
+	reqURL := fmt.Sprintf("%s://%s/%s", c.Protocol, c.Addr, url.QueryEscape(index))
 
 	r, err := c.Do("HEAD", reqURL, nil)
 	if err != nil {
@@ -385,10 +372,9 @@ func (c *Client) Exists(index string, docType string, id string) (bool, error) {
 }
 
 // Delete deletes the item by id.
-func (c *Client) Delete(index string, docType string, id string) error {
-	reqURL := fmt.Sprintf("%s://%s/%s/%s/%s", c.Protocol, c.Addr,
+func (c *Client) Delete(index string, id string) error {
+	reqURL := fmt.Sprintf("%s://%s/%s/_doc/%s", c.Protocol, c.Addr,
 		url.QueryEscape(index),
-		url.QueryEscape(docType),
 		url.QueryEscape(id))
 
 	r, err := c.Do("DELETE", reqURL, nil)
@@ -415,15 +401,6 @@ func (c *Client) Bulk(items []*BulkRequest) (*BulkResponse, error) {
 func (c *Client) IndexBulk(index string, items []*BulkRequest) (*BulkResponse, error) {
 	reqURL := fmt.Sprintf("%s://%s/%s/_bulk", c.Protocol, c.Addr,
 		url.QueryEscape(index))
-
-	return c.DoBulk(reqURL, items)
-}
-
-// IndexTypeBulk sends the bulk request for index and doc type.
-func (c *Client) IndexTypeBulk(index string, docType string, items []*BulkRequest) (*BulkResponse, error) {
-	reqURL := fmt.Sprintf("%s://%s/%s/%s/_bulk", c.Protocol, c.Addr,
-		url.QueryEscape(index),
-		url.QueryEscape(docType))
 
 	return c.DoBulk(reqURL, items)
 }

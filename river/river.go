@@ -7,9 +7,9 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/fasttrack-solutions/go-mysql-elasticsearch/elastic"
 	"github.com/juju/errors"
 	"github.com/siddontang/go-log/log"
-	"github.com/siddontang/go-mysql-elasticsearch/elastic"
 	"github.com/siddontang/go-mysql/canal"
 )
 
@@ -248,8 +248,6 @@ func (r *River) prepareRule() error {
 				for _, table := range tables {
 					rr := r.rules[ruleKey(rule.Schema, table)]
 					rr.Index = rule.Index
-					rr.Type = rule.Type
-					rr.Parent = rule.Parent
 					rr.ID = rule.ID
 					rr.FieldMapping = rule.FieldMapping
 				}

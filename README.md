@@ -5,8 +5,8 @@ It uses `mysqldump` to fetch the origin data at first, then syncs data increment
 ## Install
 
 + Install Go (1.9+) and set your [GOPATH](https://golang.org/doc/code.html#GOPATH)
-+ `go get github.com/siddontang/go-mysql-elasticsearch`, it will print some messages in console, skip it. :-)
-+ cd `$GOPATH/src/github.com/siddontang/go-mysql-elasticsearch`
++ `go get github.com/fasttrack-solutions/go-mysql-elasticsearch`, it will print some messages in console, skip it. :-)
++ cd `$GOPATH/src/github.com/fasttrack-solutions/go-mysql-elasticsearch`
 + `make`
 
 ## How to use?
@@ -132,19 +132,6 @@ type = "river"
 "test_river_[0-9]{4}" is a wildcard table definition, which represents "test_river_0000" to "test_river_9999", at the same time, the table in the rule must be same as it.
 
 At the above example, if you have 1024 sub tables, all tables will be synced into Elasticsearch with index "river" and type "river".
-
-## Parent-Child Relationship
-
-One-to-many join ( [parent-child relationship](https://www.elastic.co/guide/en/elasticsearch/guide/current/parent-child.html) in Elasticsearch ) is supported. Simply specify the field name for `parent` property.
-
-```
-[[rule]]
-schema = "test"
-table = "t1"
-index = "t"
-type = "t"
-parent = "parent_id"
-```
 
 Note: you should [setup relationship](https://www.elastic.co/guide/en/elasticsearch/reference/current/mapping-parent-field.html) with creating the mapping manually.
 

@@ -42,30 +42,25 @@ func makeTestData(arg1 string, arg2 string) map[string]interface{} {
 }
 
 func (s *elasticTestSuite) TestSimple(c *C) {
-	index := "dummy"
-	docType := "blog"
+	index := "test-simple"
 
-	//key1 := "name"
-	//key2 := "content"
+	// Delete defore running the test.
+	s.c.DeleteIndex(index)
 
-	err := s.c.Update(index, docType, "1", makeTestData("abc", "hello world"))
+	err := s.c.Update(index, "1", makeTestData("abc", "hello world"))
 	c.Assert(err, IsNil)
 
-	exists, err := s.c.Exists(index, docType, "1")
+	exists, err := s.c.Exists(index)
 	c.Assert(err, IsNil)
 	c.Assert(exists, Equals, true)
 
-	r, err := s.c.Get(index, docType, "1")
+	r, err := s.c.Get(index, "1")
 	c.Assert(err, IsNil)
 	c.Assert(r.Code, Equals, 200)
 	c.Assert(r.ID, Equals, "1")
 
-	err = s.c.Delete(index, docType, "1")
+	err = s.c.Delete(index, "1")
 	c.Assert(err, IsNil)
-
-	exists, err = s.c.Exists(index, docType, "1")
-	c.Assert(err, IsNil)
-	c.Assert(exists, Equals, false)
 
 	items := make([]*BulkRequest, 10)
 
@@ -78,7 +73,7 @@ func (s *elasticTestSuite) TestSimple(c *C) {
 		items[i] = req
 	}
 
-	resp, err := s.c.IndexTypeBulk(index, docType, items)
+	resp, err := s.c.IndexBulk(index, items)
 	c.Assert(err, IsNil)
 	c.Assert(resp.Code, Equals, 200)
 	c.Assert(resp.Errors, Equals, false)
@@ -91,54 +86,7 @@ func (s *elasticTestSuite) TestSimple(c *C) {
 		items[i] = req
 	}
 
-	resp, err = s.c.IndexTypeBulk(index, docType, items)
-	c.Assert(err, IsNil)
-	c.Assert(resp.Code, Equals, 200)
-	c.Assert(resp.Errors, Equals, false)
-}
-
-// this requires a parent setting in _mapping
-func (s *elasticTestSuite) TestParent(c *C) {
-	index := "dummy"
-	docType := "comment"
-	ParentType := "parent"
-
-	mapping := map[string]interface{}{
-		docType: map[string]interface{}{
-			"_parent": map[string]string{"type": ParentType},
-		},
-	}
-	err := s.c.CreateMapping(index, docType, mapping)
-	c.Assert(err, IsNil)
-
-	items := make([]*BulkRequest, 10)
-
-	for i := 0; i < 10; i++ {
-		id := fmt.Sprintf("%d", i)
-		req := new(BulkRequest)
-		req.Action = ActionIndex
-		req.ID = id
-		req.Data = makeTestData(fmt.Sprintf("abc %d", i), fmt.Sprintf("hello world %d", i))
-		req.Parent = "1"
-		items[i] = req
-	}
-
-	resp, err := s.c.IndexTypeBulk(index, docType, items)
-	c.Assert(err, IsNil)
-	c.Assert(resp.Code, Equals, 200)
-	c.Assert(resp.Errors, Equals, false)
-
-	for i := 0; i < 10; i++ {
-		id := fmt.Sprintf("%d", i)
-		req := new(BulkRequest)
-		req.Index = index
-		req.Type = docType
-		req.Action = ActionDelete
-		req.ID = id
-		req.Parent = "1"
-		items[i] = req
-	}
-	resp, err = s.c.Bulk(items)
+	resp, err = s.c.IndexBulk(index, items)
 	c.Assert(err, IsNil)
 	c.Assert(resp.Code, Equals, 200)
 	c.Assert(resp.Errors, Equals, false)
