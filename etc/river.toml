@@ -13,8 +13,17 @@ es_addr = "127.0.0.1:9200"
 es_user = ""
 es_pass = ""
 
+# Where to store master info. Accepted options "redis" and "fs".
+data_storage = "redis"
+
+#Redis connection info.
+redis_addr = "127.0.0.1:6379"
+redis_pass = ""
+redis_db = 0
+
 # Path to store data, like master.info, if not set or empty,
-# we must use this to support breakpoint resume syncing. 
+# we must use this to support breakpoint resume syncing.
+# Ignored if data_storage os not "fs".
 # TODO: support other storage, like etcd. 
 data_dir = "./var"
 

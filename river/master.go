@@ -2,52 +2,144 @@ package river
 
 import (
 	"bytes"
+	"fmt"
 	"os"
 	"path"
+	"strconv"
 	"sync"
 	"time"
 
 	"github.com/BurntSushi/toml"
+	"github.com/go-redis/redis"
 	"github.com/juju/errors"
 	"github.com/siddontang/go-log/log"
 	"github.com/siddontang/go-mysql/mysql"
 	"github.com/siddontang/go/ioutil2"
 )
 
-type masterInfo struct {
-	sync.RWMutex
+const (
+	// redisStorageMore means that master info is stored in Redis.
+	redisStorageMore string = "redis"
+	// fsStorageMore means that master info is stored in filesystem.
+	fsStorageMore string = "fs"
 
+	redisMIHashKey    string = "go-mysql-elasticsearch-master-info"
+	redisBinNameField string = "bin_name"
+	redisBinPosField  string = "bin_pos"
+)
+
+type masterInfoData struct {
 	Name string `toml:"bin_name"`
 	Pos  uint32 `toml:"bin_pos"`
+}
+
+type masterInfo struct {
+	redisClient *redis.Client
+	mode        string
+
+	sync.RWMutex
+
+	Data masterInfoData
 
 	filePath     string
 	lastSaveTime time.Time
 }
 
-func loadMasterInfo(dataDir string) (*masterInfo, error) {
-	var m masterInfo
+func newMasterInfo(c *Config) (*masterInfo, error) {
+	mi := new(masterInfo)
 
-	if len(dataDir) == 0 {
-		return &m, nil
+	mi.mode = c.DataStorage
+
+	switch c.DataStorage {
+	case redisStorageMore:
+		mi.redisClient = redis.NewClient(&redis.Options{
+			Addr:     c.RedisAddr,
+			Password: c.RedisPassword,
+			DB:       int(c.RedisDB),
+		})
+
+		_, pingErr := mi.redisClient.Ping().Result()
+		if pingErr != nil {
+			return nil, pingErr
+		}
+
+		e := mi.redisClient.Exists(redisMIHashKey)
+		if e.Err() != nil {
+			return nil, e.Err()
+		}
+
+		if e.Val() == 0 {
+			mi.redisClient.HMSet(redisMIHashKey, map[string]interface{}{
+				redisBinNameField: "",
+				redisBinPosField:  0,
+			})
+		}
+
+	case fsStorageMore:
+		if len(c.DataDir) > 0 {
+			mi.filePath = path.Join(c.DataDir, "master.info")
+		}
+
+		if mkdirErr := os.MkdirAll(c.DataDir, 0755); mkdirErr != nil {
+			return nil, errors.Trace(mkdirErr)
+		}
+
+	default:
+		return nil, fmt.Errorf("Invalid data storage value received [%s], accepted: %s, %s", c.DataStorage, redisStorageMore, fsStorageMore)
 	}
 
-	m.filePath = path.Join(dataDir, "master.info")
+	return mi, nil
+}
+
+func (m *masterInfo) load() error {
 	m.lastSaveTime = time.Now()
 
-	if err := os.MkdirAll(dataDir, 0755); err != nil {
-		return nil, errors.Trace(err)
+	switch m.mode {
+	case redisStorageMore:
+		res := m.redisClient.HGetAll(redisMIHashKey)
+		if res.Err() != nil {
+			return errors.Trace(res.Err())
+		}
+
+		data, dataErr := res.Result()
+		if dataErr != nil {
+			return errors.Trace(dataErr)
+		}
+
+		var ok bool
+		m.Data.Name, ok = data[redisBinNameField]
+		if !ok {
+			return errors.New("Failed to read master info bin name from Redis")
+		}
+
+		var pos string
+		pos, ok = data[redisBinPosField]
+		if !ok {
+			return errors.New("Failed to read master info bin position from Redis")
+		}
+
+		posInt, posIntErr := strconv.ParseInt(pos, 10, 64)
+		if posIntErr != nil {
+			return errors.Trace(posIntErr)
+		}
+
+		m.Data.Pos = uint32(posInt)
+
+	case fsStorageMore:
+		f, err := os.Open(m.filePath)
+		if err != nil && !os.IsNotExist(errors.Cause(err)) {
+			return errors.Trace(err)
+		} else if os.IsNotExist(errors.Cause(err)) {
+			return nil
+		}
+		defer f.Close()
+
+		_, err = toml.DecodeReader(f, &m.Data)
+		return errors.Trace(err)
+
 	}
 
-	f, err := os.Open(m.filePath)
-	if err != nil && !os.IsNotExist(errors.Cause(err)) {
-		return nil, errors.Trace(err)
-	} else if os.IsNotExist(errors.Cause(err)) {
-		return &m, nil
-	}
-	defer f.Close()
-
-	_, err = toml.DecodeReader(f, &m)
-	return &m, errors.Trace(err)
+	return nil
 }
 
 func (m *masterInfo) Save(pos mysql.Position) error {
@@ -56,30 +148,40 @@ func (m *masterInfo) Save(pos mysql.Position) error {
 	m.Lock()
 	defer m.Unlock()
 
-	m.Name = pos.Name
-	m.Pos = pos.Pos
-
-	if len(m.filePath) == 0 {
-		return nil
-	}
+	m.Data.Name = pos.Name
+	m.Data.Pos = pos.Pos
 
 	n := time.Now()
 	if n.Sub(m.lastSaveTime) < time.Second {
 		return nil
 	}
 
-	m.lastSaveTime = n
-	var buf bytes.Buffer
-	e := toml.NewEncoder(&buf)
+	switch m.mode {
+	case redisStorageMore:
+		m.redisClient.HMSet(redisMIHashKey, map[string]interface{}{
+			redisBinNameField: m.Data.Name,
+			redisBinPosField:  m.Data.Pos,
+		})
 
-	e.Encode(m)
+	case fsStorageMore:
+		if len(m.filePath) == 0 {
+			return nil
+		}
 
-	var err error
-	if err = ioutil2.WriteFileAtomic(m.filePath, buf.Bytes(), 0644); err != nil {
-		log.Errorf("canal save master info to file %s err %v", m.filePath, err)
+		m.lastSaveTime = n
+		var buf bytes.Buffer
+		e := toml.NewEncoder(&buf)
+
+		e.Encode(m.Data)
+
+		var err error
+		if err = ioutil2.WriteFileAtomic(m.filePath, buf.Bytes(), 0644); err != nil {
+			log.Errorf("canal save master info to file %s err %v", m.filePath, err)
+			return errors.Trace(err)
+		}
 	}
 
-	return errors.Trace(err)
+	return nil
 }
 
 func (m *masterInfo) Position() mysql.Position {
@@ -87,8 +189,8 @@ func (m *masterInfo) Position() mysql.Position {
 	defer m.RUnlock()
 
 	return mysql.Position{
-		Name: m.Name,
-		Pos:  m.Pos,
+		Name: m.Data.Name,
+		Pos:  m.Data.Pos,
 	}
 }
 

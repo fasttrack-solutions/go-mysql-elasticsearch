@@ -50,7 +50,11 @@ func NewRiver(c *Config) (*River, error) {
 	r.ctx, r.cancel = context.WithCancel(context.Background())
 
 	var err error
-	if r.master, err = loadMasterInfo(c.DataDir); err != nil {
+	if r.master, err = newMasterInfo(c); err != nil {
+		return nil, errors.Trace(err)
+	}
+
+	if err = r.master.load(); err != nil {
 		return nil, errors.Trace(err)
 	}
 

@@ -13,9 +13,17 @@ import (
 )
 
 var configFile = flag.String("config", "./etc/river.toml", "go-mysql-elasticsearch config file")
+
+var data_storage = flag.String("data_storage", "", "Data storage")
+
 var my_addr = flag.String("my_addr", "", "MySQL addr")
 var my_user = flag.String("my_user", "", "MySQL user")
 var my_pass = flag.String("my_pass", "", "MySQL password")
+
+var redis_addr = flag.String("redis_addr", "", "Redis addr")
+var redis_pass = flag.String("redis_pass", "", "Redis password")
+var redis_db = flag.Int("redis_db", -1, "Redis database")
+
 var es_addr = flag.String("es_addr", "", "Elasticsearch addr")
 var data_dir = flag.String("data_dir", "", "path for go-mysql-elasticsearch to save data")
 var server_id = flag.Int("server_id", 0, "MySQL server id, as a pseudo slave")
@@ -74,6 +82,18 @@ func main() {
 
 	if len(*execution) > 0 {
 		cfg.DumpExec = *execution
+	}
+
+	if *redis_db > -1 {
+		cfg.RedisDB = uint32(*redis_db)
+	}
+
+	if len(*redis_addr) > 0 {
+		cfg.RedisAddr = *redis_addr
+	}
+
+	if len(*redis_pass) > 0 {
+		cfg.RedisPassword = *redis_pass
 	}
 
 	r, err := river.NewRiver(cfg)

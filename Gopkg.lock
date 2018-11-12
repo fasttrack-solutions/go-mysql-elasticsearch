@@ -2,56 +2,88 @@
 
 
 [[projects]]
+  digest = "1:167b6f65a6656de568092189ae791253939f076df60231fdd64588ac703892a1"
   name = "github.com/BurntSushi/toml"
   packages = ["."]
+  pruneopts = "NUT"
   revision = "b26d9c308763d68093482582cea63d69be07a0f0"
   version = "v0.3.0"
 
 [[projects]]
+  digest = "1:1ec082b4d1039a72df4d81363a277de2c57d97c601790b7e1581020f8bd3cac5"
+  name = "github.com/go-redis/redis"
+  packages = [
+    ".",
+    "internal",
+    "internal/consistenthash",
+    "internal/hashtag",
+    "internal/pool",
+    "internal/proto",
+    "internal/singleflight",
+    "internal/util",
+  ]
+  pruneopts = "NUT"
+  revision = "b3d9bf10f6666b2ee5100a6f3f84f4caf3b4e37d"
+  version = "v6.14.2"
+
+[[projects]]
   branch = "master"
+  digest = "1:b042670ecd8bc03ce6ec7b27d78681f6185561682e3e7eb5300c8275a82882d7"
   name = "github.com/juju/errors"
   packages = ["."]
+  pruneopts = "NUT"
   revision = "812b06ada1776ad4dd95d575e18ffffe3a9ac34a"
 
 [[projects]]
   branch = "master"
+  digest = "1:dc85cc12f7f97c2b033157f9d40395b2f0458b7bd3083257f8f661ea6f48f89a"
   name = "github.com/pingcap/check"
   packages = ["."]
+  pruneopts = "NUT"
   revision = "1c287c953996ab3a0bf535dba9d53d809d3dc0b6"
 
 [[projects]]
+  digest = "1:6bc0652ea6e39e22ccd522458b8bdd8665bf23bdc5a20eec90056e4dc7e273ca"
   name = "github.com/satori/go.uuid"
   packages = ["."]
+  pruneopts = "NUT"
   revision = "f58768cc1a7a7e77a3bd49e98cdd21419399b6a3"
   version = "v1.2.0"
 
 [[projects]]
+  digest = "1:11afe1ad32273aeda2ff5e80317638da5006aff881263b995038900a89494eff"
   name = "github.com/shopspring/decimal"
   packages = ["."]
+  pruneopts = "NUT"
   revision = "cd690d0c9e2447b1ef2a129a6b7b49077da89b8e"
   version = "1.1.0"
 
 [[projects]]
   branch = "master"
+  digest = "1:945ae3e4f0012ca55293d56fc7f298ff948772c0ee156f8cc9b1c149bc9dde57"
   name = "github.com/siddontang/go"
   packages = [
     "hack",
     "ioutil2",
-    "sync2"
+    "sync2",
   ]
+  pruneopts = "NUT"
   revision = "bdc77568d726a8702315ec4eafda030b6abc4f43"
 
 [[projects]]
   branch = "master"
+  digest = "1:22d4ade969b8af6af12062fbd4c68500553aef9366d245421da47dd7a8929a02"
   name = "github.com/siddontang/go-log"
   packages = [
     "log",
-    "loggers"
+    "loggers",
   ]
+  pruneopts = "NUT"
   revision = "a4d157e46fa3e08b7e7ff329af341fa3ff86c02c"
 
 [[projects]]
   branch = "master"
+  digest = "1:192b1d76cb5ee02238e8d4c432ac2b03bd791e034e23b3fe12db9cfb5202e4f7"
   name = "github.com/siddontang/go-mysql"
   packages = [
     "canal",
@@ -60,13 +92,27 @@
     "mysql",
     "packet",
     "replication",
-    "schema"
+    "schema",
   ]
+  pruneopts = "NUT"
   revision = "2d151e326c1a7193d6c374dba6fbb0db3435bf05"
 
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "a44edb92429a19dab5e22a895bbcd4f8d98e67fb9e5f0d6c6899afe1a6517b59"
+  input-imports = [
+    "github.com/BurntSushi/toml",
+    "github.com/go-redis/redis",
+    "github.com/juju/errors",
+    "github.com/pingcap/check",
+    "github.com/siddontang/go-log/log",
+    "github.com/siddontang/go-mysql/canal",
+    "github.com/siddontang/go-mysql/client",
+    "github.com/siddontang/go-mysql/mysql",
+    "github.com/siddontang/go-mysql/replication",
+    "github.com/siddontang/go-mysql/schema",
+    "github.com/siddontang/go/ioutil2",
+    "github.com/siddontang/go/sync2",
+  ]
   solver-name = "gps-cdcl"
   solver-version = 1

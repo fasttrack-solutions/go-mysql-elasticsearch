@@ -16,10 +16,16 @@ type SourceConfig struct {
 
 // Config is the configuration
 type Config struct {
+	DataStorage string `toml:"data_storage"`
+
 	MyAddr     string `toml:"my_addr"`
 	MyUser     string `toml:"my_user"`
 	MyPassword string `toml:"my_pass"`
 	MyCharset  string `toml:"my_charset"`
+
+	RedisAddr     string `toml:"redis_addr"`
+	RedisPassword string `toml:"redis_pass"`
+	RedisDB       uint32 `toml:"redis_db"`
 
 	ESHttps    bool   `toml:"es_https"`
 	ESAddr     string `toml:"es_addr"`
