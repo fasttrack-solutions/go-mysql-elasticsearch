@@ -45,11 +45,24 @@ func NewRiver(c *Config) (*River, error) {
 	r := new(River)
 
 	r.c = c
+
+	cfg := new(elastic.ClientConfig)
+	cfg.Addr = r.c.ESAddr
+	cfg.User = r.c.ESUser
+	cfg.Password = r.c.ESPassword
+	cfg.HTTPS = r.c.ESHttps
+	cfg.MappingsDir = r.c.MappingsDir
+
+	var err error
+	r.es, err = elastic.NewClient(cfg)
+	if err != nil {
+		return nil, errors.Trace(err)
+	}
+
 	r.rules = make(map[string]*Rule)
 	r.syncCh = make(chan interface{}, 4096)
 	r.ctx, r.cancel = context.WithCancel(context.Background())
 
-	var err error
 	if r.master, err = newMasterInfo(c); err != nil {
 		return nil, errors.Trace(err)
 	}
@@ -74,13 +87,6 @@ func NewRiver(c *Config) (*River, error) {
 	if err = r.canal.CheckBinlogRowImage("FULL"); err != nil {
 		return nil, errors.Trace(err)
 	}
-
-	cfg := new(elastic.ClientConfig)
-	cfg.Addr = r.c.ESAddr
-	cfg.User = r.c.ESUser
-	cfg.Password = r.c.ESPassword
-	cfg.HTTPS = r.c.ESHttps
-	r.es = elastic.NewClient(cfg)
 
 	r.st = &stat{r: r}
 	go r.st.Run(r.c.StatAddr)

@@ -2,14 +2,20 @@ package elastic
 
 import (
 	"bytes"
+	"context"
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"net/url"
+	"path"
+	"strings"
+	"time"
 
 	"github.com/juju/errors"
+	es "gopkg.in/olivere/elastic.v6"
 )
 
 // Client is the client to communicate with ES.
@@ -26,19 +32,143 @@ type Client struct {
 
 // ClientConfig is the configuration for the client.
 type ClientConfig struct {
-	HTTPS    bool
-	Addr     string
-	User     string
-	Password string
+	HTTPS       bool
+	Addr        string
+	User        string
+	Password    string
+	MappingsDir string
+}
+
+const (
+	// StatusYellow represents yellow ES cluster status.
+	StatusYellow string = "yellow"
+	// StatusGreen represents green ES cluster status.
+	StatusGreen string = "green"
+)
+
+func waitForES(url string) error {
+	type esResp struct {
+		Status string `json:"status"`
+	}
+
+	for {
+		resp, respErr := http.Get(fmt.Sprintf("%s/_cluster/health?pretty", url))
+		if respErr != nil || resp.StatusCode != http.StatusOK {
+			log.Printf("Failed to connect to ES [%s], reconnecting in 5 seconds\n", url)
+
+			time.Sleep(time.Second * 5)
+			continue
+		}
+
+		b, bErr := ioutil.ReadAll(resp.Body)
+		if bErr != nil {
+			return bErr
+		}
+
+		resp.Body.Close()
+
+		var respData esResp
+		dataErr := json.Unmarshal(b, &respData)
+		if dataErr != nil {
+			return dataErr
+		}
+
+		if strings.ToLower(respData.Status) == StatusYellow || strings.ToLower(respData.Status) == StatusGreen {
+			break
+		}
+
+		log.Printf("ES status is [%s], reconnecting in 5 seconds\n", respData.Status)
+		time.Sleep(time.Second * 5)
+	}
+
+	return nil
+}
+
+func createIndexes(url, mappingsDir string) error {
+	// List available mappings.
+	files, filesErr := ioutil.ReadDir(mappingsDir)
+	if filesErr != nil {
+		return filesErr
+	}
+
+	idxMappings := make(map[string]string)
+
+	for _, f := range files {
+		fullFileName := f.Name()
+		idxName := fullFileName[:len(fullFileName)-len(path.Ext(fullFileName))]
+
+		// Read mappings file.
+		b, bErr := ioutil.ReadFile(path.Join(mappingsDir, fullFileName))
+		if bErr != nil {
+			return bErr
+		}
+
+		// Populate map with index name and the corresponding mapping JSON.
+		idxMappings[idxName] = string(b)
+	}
+
+	// Connect to ES.
+	ctx := context.Background()
+
+	esClient, esClientErr := es.NewClient(es.SetURL(url))
+	if esClientErr != nil {
+		return fmt.Errorf("Failed to connect to ES: %v", esClientErr)
+	}
+
+	esInfo, esCode, esPingErr := esClient.Ping(url).Do(ctx)
+	if esPingErr != nil {
+		return fmt.Errorf("Failed to ping ES: %v", esPingErr)
+	}
+
+	log.Printf("ES responded with code %d and version %s\n", esCode, esInfo.Version.Number)
+
+	// Create indexes, report existing ones.
+	for idxName, mappingsJSON := range idxMappings {
+		start := time.Now()
+
+		esIdxExists, esIdxExistsErr := esClient.IndexExists(idxName).Do(ctx)
+		if esIdxExistsErr != nil {
+			log.Fatal(esIdxExistsErr)
+		}
+
+		if esIdxExists {
+			log.Printf("Index %s already exists, can not apply mappings (%v)\n", idxName, time.Since(start))
+			continue
+		}
+
+		log.Printf("Processing index %s ...", idxName)
+		createESIndex, createESIndexErr := esClient.CreateIndex(idxName).BodyString(mappingsJSON).Do(ctx)
+		if createESIndexErr != nil {
+			log.Fatal(createESIndexErr)
+		}
+
+		if !createESIndex.Acknowledged {
+			log.Fatalf("Creating of index %s is not acknowledged\n", idxName)
+		}
+
+		log.Printf(" Success (%v)\n", time.Since(start))
+	}
+
+	return nil
 }
 
 // NewClient creates the Cient with configuration.
-func NewClient(conf *ClientConfig) *Client {
+func NewClient(conf *ClientConfig) (*Client, error) {
 	c := new(Client)
 
 	c.Addr = conf.Addr
 	c.User = conf.User
 	c.Password = conf.Password
+
+	err := waitForES("http://" + c.Addr)
+	if err != nil {
+		return nil, err
+	}
+
+	err = createIndexes("http://"+c.Addr, conf.MappingsDir)
+	if err != nil {
+		return nil, err
+	}
 
 	if conf.HTTPS {
 		c.Protocol = "https"
@@ -51,7 +181,7 @@ func NewClient(conf *ClientConfig) *Client {
 		c.c = &http.Client{}
 	}
 
-	return c
+	return c, nil
 }
 
 // ResponseItem is the ES item in the response.

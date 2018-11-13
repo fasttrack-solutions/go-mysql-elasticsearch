@@ -15,6 +15,7 @@ import (
 var configFile = flag.String("config", "./etc/river.toml", "go-mysql-elasticsearch config file")
 
 var data_storage = flag.String("data_storage", "", "Data storage")
+var mappings_dir = flag.String("mappings_dir", "", "Mappings directory")
 
 var my_addr = flag.String("my_addr", "", "MySQL addr")
 var my_user = flag.String("my_user", "", "MySQL user")
@@ -94,6 +95,10 @@ func main() {
 
 	if len(*redis_pass) > 0 {
 		cfg.RedisPassword = *redis_pass
+	}
+
+	if len(*mappings_dir) > 0 {
+		cfg.MappingsDir = *mappings_dir
 	}
 
 	r, err := river.NewRiver(cfg)

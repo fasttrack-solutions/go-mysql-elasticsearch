@@ -36,11 +36,43 @@
 
 [[projects]]
   branch = "master"
+  digest = "1:853fe95bef4c5e8a70dcd405b5206b38a9ff09e9c26fef93d1d0adeaea39f9ce"
+  name = "github.com/mailru/easyjson"
+  packages = [
+    ".",
+    "buffer",
+    "jlexer",
+    "jwriter",
+  ]
+  pruneopts = "NUT"
+  revision = "60711f1a8329503b04e1c88535f419d0bb440bff"
+
+[[projects]]
+  digest = "1:a90ec77534623646c77de67eb8b30b8dccc74a9e5fc8551eba8f3d71ce989d6f"
+  name = "github.com/olivere/elastic"
+  packages = [
+    "config",
+    "uritemplates",
+  ]
+  pruneopts = "NUT"
+  revision = "4982266e48e0dc5c639e389b50221dcef09cdc99"
+  version = "v6.2.12"
+
+[[projects]]
+  branch = "master"
   digest = "1:dc85cc12f7f97c2b033157f9d40395b2f0458b7bd3083257f8f661ea6f48f89a"
   name = "github.com/pingcap/check"
   packages = ["."]
   pruneopts = "NUT"
   revision = "1c287c953996ab3a0bf535dba9d53d809d3dc0b6"
+
+[[projects]]
+  digest = "1:5cf3f025cbee5951a4ee961de067c8a89fc95a5adabead774f82822efabab121"
+  name = "github.com/pkg/errors"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "645ef00459ed84a119197bfb8d8205042c6df63d"
+  version = "v0.8.0"
 
 [[projects]]
   digest = "1:6bc0652ea6e39e22ccd522458b8bdd8665bf23bdc5a20eec90056e4dc7e273ca"
@@ -97,6 +129,14 @@
   pruneopts = "NUT"
   revision = "2d151e326c1a7193d6c374dba6fbb0db3435bf05"
 
+[[projects]]
+  digest = "1:a433b75f39c9295e8201dc9b6e50d6f0ba22b0f81e396f425a87802ee0bfa109"
+  name = "gopkg.in/olivere/elastic.v6"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "4982266e48e0dc5c639e389b50221dcef09cdc99"
+  version = "v6.2.12"
+
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
@@ -113,6 +153,7 @@
     "github.com/siddontang/go-mysql/schema",
     "github.com/siddontang/go/ioutil2",
     "github.com/siddontang/go/sync2",
+    "gopkg.in/olivere/elastic.v6",
   ]
   solver-name = "gps-cdcl"
   solver-version = 1

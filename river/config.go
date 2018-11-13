@@ -17,6 +17,7 @@ type SourceConfig struct {
 // Config is the configuration
 type Config struct {
 	DataStorage string `toml:"data_storage"`
+	MappingsDir string `toml:"mappings_dir"`
 
 	MyAddr     string `toml:"my_addr"`
 	MyUser     string `toml:"my_user"`
