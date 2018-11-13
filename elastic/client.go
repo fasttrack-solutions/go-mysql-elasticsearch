@@ -160,16 +160,6 @@ func NewClient(conf *ClientConfig) (*Client, error) {
 	c.User = conf.User
 	c.Password = conf.Password
 
-	err := waitForES("http://" + c.Addr)
-	if err != nil {
-		return nil, err
-	}
-
-	err = createIndexes("http://"+c.Addr, conf.MappingsDir)
-	if err != nil {
-		return nil, err
-	}
-
 	if conf.HTTPS {
 		c.Protocol = "https"
 		tr := &http.Transport{
@@ -179,6 +169,16 @@ func NewClient(conf *ClientConfig) (*Client, error) {
 	} else {
 		c.Protocol = "http"
 		c.c = &http.Client{}
+	}
+
+	err := waitForES(c.Protocol + "://" + c.Addr)
+	if err != nil {
+		return nil, err
+	}
+
+	err = createIndexes(c.Protocol+"://"+c.Addr, conf.MappingsDir)
+	if err != nil {
+		return nil, err
 	}
 
 	return c, nil

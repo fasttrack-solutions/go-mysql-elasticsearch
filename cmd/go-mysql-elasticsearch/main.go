@@ -6,10 +6,12 @@ import (
 	"os/signal"
 	"runtime"
 	"syscall"
+	"time"
 
 	"github.com/fasttrack-solutions/go-mysql-elasticsearch/river"
 	"github.com/juju/errors"
 	"github.com/siddontang/go-log/log"
+	myc "github.com/siddontang/go-mysql/client"
 )
 
 var configFile = flag.String("config", "./etc/river.toml", "go-mysql-elasticsearch config file")
@@ -99,6 +101,18 @@ func main() {
 
 	if len(*mappings_dir) > 0 {
 		cfg.MappingsDir = *mappings_dir
+	}
+
+	// Reconnect to MySQL.
+	for {
+		_, err = myc.Connect(cfg.MyAddr, cfg.MyUser, cfg.MyPassword, "")
+		if err != nil {
+			log.Printf("Failed to connect to MySQL [%s], reconnecting in 10 seconds\n", cfg.MyAddr)
+			time.Sleep(10 * time.Second)
+			continue
+		}
+
+		break
 	}
 
 	r, err := river.NewRiver(cfg)
