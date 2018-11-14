@@ -87,7 +87,7 @@ func (s *riverTestSuite) SetUpSuite(c *C) {
 
 	cfg.StatAddr = "127.0.0.1:12800"
 	cfg.BulkSize = 1
-	cfg.FlushBulkTime = TomlDuration{3 * time.Millisecond}
+	cfg.FlushBulkTime = 3 * time.Millisecond
 
 	os.RemoveAll(cfg.DataDir)
 

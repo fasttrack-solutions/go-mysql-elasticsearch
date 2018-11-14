@@ -10,6 +10,14 @@
   version = "v0.3.0"
 
 [[projects]]
+  branch = "master"
+  digest = "1:e2e95099f1a984e9a20f247dc6d1e2ba5bf1ddc6c8eebc5001498e50d6c390ff"
+  name = "github.com/alex-ant/envs"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "ff120f8dc147f9250185cf51414c100647044505"
+
+[[projects]]
   digest = "1:1ec082b4d1039a72df4d81363a277de2c57d97c601790b7e1581020f8bd3cac5"
   name = "github.com/go-redis/redis"
   packages = [
@@ -46,6 +54,22 @@
   ]
   pruneopts = "NUT"
   revision = "60711f1a8329503b04e1c88535f419d0bb440bff"
+
+[[projects]]
+  digest = "1:bff482b22ebed387378546ba6a7850fdef87fd47f8ee58a7c62124a8e889a56b"
+  name = "github.com/mattn/go-runewidth"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "ce7b0b5c7b45a81508558cd1dba6bb1e4ddb51bb"
+  version = "v0.0.3"
+
+[[projects]]
+  digest = "1:a37f6e86e990987d8b1b7642dd1b9763d914cb9bc862d493bae7b53158ac4b27"
+  name = "github.com/olekukonko/tablewriter"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "e6d60cf7ba1f42d86d54cdf5508611c4aafb3970"
+  version = "v0.0.1"
 
 [[projects]]
   digest = "1:a90ec77534623646c77de67eb8b30b8dccc74a9e5fc8551eba8f3d71ce989d6f"
@@ -142,6 +166,7 @@
   analyzer-version = 1
   input-imports = [
     "github.com/BurntSushi/toml",
+    "github.com/alex-ant/envs",
     "github.com/go-redis/redis",
     "github.com/juju/errors",
     "github.com/pingcap/check",

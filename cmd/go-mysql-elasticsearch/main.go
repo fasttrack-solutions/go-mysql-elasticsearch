@@ -4,39 +4,58 @@ import (
 	"flag"
 	"os"
 	"os/signal"
-	"runtime"
 	"syscall"
 	"time"
 
+	"github.com/alex-ant/envs"
 	"github.com/fasttrack-solutions/go-mysql-elasticsearch/river"
 	"github.com/juju/errors"
 	"github.com/siddontang/go-log/log"
 	myc "github.com/siddontang/go-mysql/client"
 )
 
-var configFile = flag.String("config", "./etc/river.toml", "go-mysql-elasticsearch config file")
+var (
+	configFile = flag.String("config", "./etc/river.toml", "go-mysql-elasticsearch config file")
 
-var data_storage = flag.String("data_storage", "", "Data storage")
-var mappings_dir = flag.String("mappings_dir", "", "Mappings directory")
+	dataStorage = flag.String("dataStorage", "redis", "Data storage (redis/fs)")
+	mappingsDir = flag.String("mappingsDir", "", "Mappings directory")
 
-var my_addr = flag.String("my_addr", "", "MySQL addr")
-var my_user = flag.String("my_user", "", "MySQL user")
-var my_pass = flag.String("my_pass", "", "MySQL password")
+	myAddr    = flag.String("myAddr", "127.0.0.1:3306", "MySQL addr")
+	myUser    = flag.String("myUser", "root", "MySQL user")
+	myPass    = flag.String("myPass", "root", "MySQL password")
+	myCharset = flag.String("myCharset", "utf8", "MySQL DB charset")
 
-var redis_addr = flag.String("redis_addr", "", "Redis addr")
-var redis_pass = flag.String("redis_pass", "", "Redis password")
-var redis_db = flag.Int("redis_db", -1, "Redis database")
+	redisAddr = flag.String("redisAddr", "127.0.0.1:6379", "Redis addr")
+	redisPass = flag.String("redisPass", "", "Redis password")
+	redisDB   = flag.Int("redisDB", 0, "Redis database")
 
-var es_addr = flag.String("es_addr", "", "Elasticsearch addr")
-var data_dir = flag.String("data_dir", "", "path for go-mysql-elasticsearch to save data")
-var server_id = flag.Int("server_id", 0, "MySQL server id, as a pseudo slave")
-var flavor = flag.String("flavor", "", "flavor: mysql or mariadb")
-var execution = flag.String("exec", "", "mysqldump execution path")
-var logLevel = flag.String("log_level", "info", "log level")
+	esAddr  = flag.String("esAddr", "127.0.0.1:9200", "Elasticsearch addr")
+	esUser  = flag.String("esUser", "", "Elasticsearch user")
+	esPass  = flag.String("esPass", "", "Elasticsearch password")
+	esHTTPS = flag.Bool("esHTTPS", false, "Use HTTPS for ES")
+
+	dataDir        = flag.String("dataDir", "./go-mysql-elasticsearch-data", "Path for go-mysql-elasticsearch to save data")
+	statAddr       = flag.String("statAddr", "127.0.0.1:12800", "Inner HTTP status address")
+	serverID       = flag.Int("serverID", 1001, "MySQL server ID, as a pseudo slave")
+	flavor         = flag.String("flavor", "mysql", "Flavor: mysql or mariadb")
+	bulkSize       = flag.Int("bulkSize", 1024, "Minimal number of items to be inserted in a single bulk")
+	execution      = flag.String("exec", "mysqldump", "mysqldump execution path")
+	skipMasterData = flag.Bool("skipMasterData", false, "if no privilege to use mysqldump with --master-data, we must skip it")
+	logLevel       = flag.String("logLevel", "Info", "log level")
+
+	flushBulkTime = flag.Duration("flushBulkTime", time.Millisecond*200, "Force flush the pending requests if we don't have enough items >= bulkSize")
+	skipNoPkTable = flag.Bool("skipNoPkTable", false, "Ignore table without primary key")
+)
 
 func main() {
-	runtime.GOMAXPROCS(runtime.NumCPU())
+	// Parse flags.
 	flag.Parse()
+
+	// Determine and read environment variables.
+	flagsErr := envs.GetAllFlags()
+	if flagsErr != nil {
+		log.Fatal(flagsErr)
+	}
 
 	log.SetLevelByName(*logLevel)
 
@@ -55,53 +74,28 @@ func main() {
 		return
 	}
 
-	if len(*my_addr) > 0 {
-		cfg.MyAddr = *my_addr
-	}
-
-	if len(*my_user) > 0 {
-		cfg.MyUser = *my_user
-	}
-
-	if len(*my_pass) > 0 {
-		cfg.MyPassword = *my_pass
-	}
-
-	if *server_id > 0 {
-		cfg.ServerID = uint32(*server_id)
-	}
-
-	if len(*es_addr) > 0 {
-		cfg.ESAddr = *es_addr
-	}
-
-	if len(*data_dir) > 0 {
-		cfg.DataDir = *data_dir
-	}
-
-	if len(*flavor) > 0 {
-		cfg.Flavor = *flavor
-	}
-
-	if len(*execution) > 0 {
-		cfg.DumpExec = *execution
-	}
-
-	if *redis_db > -1 {
-		cfg.RedisDB = uint32(*redis_db)
-	}
-
-	if len(*redis_addr) > 0 {
-		cfg.RedisAddr = *redis_addr
-	}
-
-	if len(*redis_pass) > 0 {
-		cfg.RedisPassword = *redis_pass
-	}
-
-	if len(*mappings_dir) > 0 {
-		cfg.MappingsDir = *mappings_dir
-	}
+	cfg.DataStorage = *dataStorage
+	cfg.MappingsDir = *mappingsDir
+	cfg.MyAddr = *myAddr
+	cfg.MyUser = *myUser
+	cfg.MyPassword = *myPass
+	cfg.MyCharset = *myCharset
+	cfg.RedisAddr = *redisAddr
+	cfg.RedisPassword = *redisPass
+	cfg.RedisDB = uint32(*redisDB)
+	cfg.ESAddr = *esAddr
+	cfg.ESUser = *esUser
+	cfg.ESPassword = *esPass
+	cfg.ESHttps = *esHTTPS
+	cfg.DataDir = *dataDir
+	cfg.StatAddr = *statAddr
+	cfg.ServerID = uint32(*serverID)
+	cfg.Flavor = *flavor
+	cfg.BulkSize = *bulkSize
+	cfg.DumpExec = *execution
+	cfg.SkipMasterData = *skipMasterData
+	cfg.FlushBulkTime = *flushBulkTime
+	cfg.SkipNoPkTable = *skipNoPkTable
 
 	// Reconnect to MySQL.
 	for {

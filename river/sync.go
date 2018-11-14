@@ -117,7 +117,7 @@ func (r *River) syncLoop() {
 		bulkSize = 128
 	}
 
-	interval := r.c.FlushBulkTime.Duration
+	interval := r.c.FlushBulkTime
 	if interval == 0 {
 		interval = 200 * time.Millisecond
 	}

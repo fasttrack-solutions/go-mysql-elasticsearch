@@ -16,41 +16,41 @@ type SourceConfig struct {
 
 // Config is the configuration
 type Config struct {
-	DataStorage string `toml:"data_storage"`
-	MappingsDir string `toml:"mappings_dir"`
+	DataStorage string
+	MappingsDir string
 
-	MyAddr     string `toml:"my_addr"`
-	MyUser     string `toml:"my_user"`
-	MyPassword string `toml:"my_pass"`
-	MyCharset  string `toml:"my_charset"`
+	MyAddr     string
+	MyUser     string
+	MyPassword string
+	MyCharset  string
 
-	RedisAddr     string `toml:"redis_addr"`
-	RedisPassword string `toml:"redis_pass"`
-	RedisDB       uint32 `toml:"redis_db"`
+	RedisAddr     string
+	RedisPassword string
+	RedisDB       uint32
 
-	ESHttps    bool   `toml:"es_https"`
-	ESAddr     string `toml:"es_addr"`
-	ESUser     string `toml:"es_user"`
-	ESPassword string `toml:"es_pass"`
+	ESHttps    bool
+	ESAddr     string
+	ESUser     string
+	ESPassword string
 
-	StatAddr string `toml:"stat_addr"`
+	StatAddr string
 
-	ServerID uint32 `toml:"server_id"`
-	Flavor   string `toml:"flavor"`
-	DataDir  string `toml:"data_dir"`
+	ServerID uint32
+	Flavor   string
+	DataDir  string
 
-	DumpExec       string `toml:"mysqldump"`
-	SkipMasterData bool   `toml:"skip_master_data"`
+	DumpExec       string
+	SkipMasterData bool
 
 	Sources []SourceConfig `toml:"source"`
 
 	Rules []*Rule `toml:"rule"`
 
-	BulkSize int `toml:"bulk_size"`
+	BulkSize int
 
-	FlushBulkTime TomlDuration `toml:"flush_bulk_time"`
+	FlushBulkTime time.Duration
 
-	SkipNoPkTable bool `toml:"skip_no_pk_table"`
+	SkipNoPkTable bool
 }
 
 // NewConfigWithFile creates a Config from file.
@@ -73,16 +73,4 @@ func NewConfig(data string) (*Config, error) {
 	}
 
 	return &c, nil
-}
-
-// TomlDuration supports time codec for TOML format.
-type TomlDuration struct {
-	time.Duration
-}
-
-// UnmarshalText implementes TOML UnmarshalText
-func (d *TomlDuration) UnmarshalText(text []byte) error {
-	var err error
-	d.Duration, err = time.ParseDuration(string(text))
-	return err
 }

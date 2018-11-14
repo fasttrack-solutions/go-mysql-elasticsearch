@@ -2,6 +2,36 @@ go-mysql-elasticsearch is a service syncing your MySQL data into Elasticsearch a
 
 It uses `mysqldump` to fetch the origin data at first, then syncs data incrementally with binlog.
 
+## Execution flags
+
+|Flag|Env. variable|Default value|Description|
+|:----|:----|:---|:---|
+|bulkSize|BULKSIZE|1024|Minimal number of items to be inserted in a single bulk|
+|config|CONFIG|./etc/river.toml|go-mysql-elasticsearch config file|
+|dataDir|DATADIR|./go-mysql-elasticsearch-data|Path for go-mysql-elasticsearch to save data|
+|dataStorage|DATASTORAGE|redis|Data storage (redis/fs)|
+|esAddr|ESADDR|127.0.0.1:9200|Elasticsearch addr|
+|esHTTPS|ESHTTPS|false|Use HTTPS for ES|
+|esPass|ESPASS||Elasticsearch password|
+|esUser|ESUSER||Elasticsearch user|
+|exec|EXEC|mysqldump|mysqldump execution path|
+|flavor|FLAVOR|mysql|Flavor: mysql or mariadb|
+|flushBulkTime|FLUSHBULKTIME|200ms|Force flush the pending requests if we don't have enough items >= bulkSize|
+|logLevel|LOGLEVEL|Info|log level|
+|mappingsDir|MAPPINGSDIR||Mappings directory|
+|myAddr|MYADDR|127.0.0.1:3306|MySQL addr|
+|myCharset|MYCHARSET|utf8|MySQL DB charset|
+|myPass|MYPASS|root|MySQL password|
+|myUser|MYUSER|root|MySQL user|
+|redisAddr|REDISADDR|127.0.0.1:6379|Redis addr|
+|redisDB|REDISDB|0|Redis database|
+|redisPass|REDISPASS||Redis password|
+|serverID|SERVERID|1001|MySQL server ID, as a pseudo slave|
+|skipMasterData|SKIPMASTERDATA|false|if no privilege to use mysqldump with --master-data, we must skip it|
+|skipNoPkTable|SKIPNOPKTABLE|false|Ignore table without primary key|
+|statAddr|STATADDR|127.0.0.1:12800|Inner HTTP status address|
+
+
 ## Install
 
 + Install Go (1.9+) and set your [GOPATH](https://golang.org/doc/code.html#GOPATH)
