@@ -98,10 +98,11 @@ func main() {
 	cfg.SkipNoPkTable = *skipNoPkTable
 
 	// Reconnect to MySQL.
+	log.Infof("Connecting to MySQL [%s]", cfg.MyAddr)
 	for {
 		_, err = myc.Connect(cfg.MyAddr, cfg.MyUser, cfg.MyPassword, "")
 		if err != nil {
-			log.Printf("Failed to connect to MySQL [%s], reconnecting in 10 seconds\n", cfg.MyAddr)
+			log.Infof("Failed to connect to MySQL [%s], reconnecting in 10 seconds", cfg.MyAddr)
 			time.Sleep(10 * time.Second)
 			continue
 		}

@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"net/url"
 	"path"
@@ -15,6 +14,7 @@ import (
 	"time"
 
 	"github.com/juju/errors"
+	"github.com/siddontang/go-log/log"
 	es "gopkg.in/olivere/elastic.v6"
 )
 
@@ -51,10 +51,11 @@ func waitForES(url string) error {
 		Status string `json:"status"`
 	}
 
+	log.Infof("Connecting to ES [%s]", url)
 	for {
 		resp, respErr := http.Get(fmt.Sprintf("%s/_cluster/health?pretty", url))
 		if respErr != nil || resp.StatusCode != http.StatusOK {
-			log.Printf("Failed to connect to ES [%s], reconnecting in 5 seconds\n", url)
+			log.Infof("Failed to connect to ES [%s], reconnecting in 5 seconds", url)
 
 			time.Sleep(time.Second * 5)
 			continue
@@ -77,7 +78,7 @@ func waitForES(url string) error {
 			break
 		}
 
-		log.Printf("ES status is [%s], reconnecting in 5 seconds\n", respData.Status)
+		log.Infof("ES status is [%s], reconnecting in 5 seconds", respData.Status)
 		time.Sleep(time.Second * 5)
 	}
 
@@ -120,7 +121,7 @@ func createIndexes(url, mappingsDir string) error {
 		return fmt.Errorf("Failed to ping ES: %v", esPingErr)
 	}
 
-	log.Printf("ES responded with code %d and version %s\n", esCode, esInfo.Version.Number)
+	log.Infof("ES responded with code %d and version %s", esCode, esInfo.Version.Number)
 
 	// Create indexes, report existing ones.
 	for idxName, mappingsJSON := range idxMappings {
@@ -128,25 +129,25 @@ func createIndexes(url, mappingsDir string) error {
 
 		esIdxExists, esIdxExistsErr := esClient.IndexExists(idxName).Do(ctx)
 		if esIdxExistsErr != nil {
-			log.Fatal(esIdxExistsErr)
+			return esIdxExistsErr
 		}
 
 		if esIdxExists {
-			log.Printf("Index %s already exists, can not apply mappings (%v)\n", idxName, time.Since(start))
+			log.Infof("Index %s already exists, can not apply mappings (%v)", idxName, time.Since(start))
 			continue
 		}
 
-		log.Printf("Processing index %s ...", idxName)
+		log.Infof("Processing index %s ...", idxName)
 		createESIndex, createESIndexErr := esClient.CreateIndex(idxName).BodyString(mappingsJSON).Do(ctx)
 		if createESIndexErr != nil {
-			log.Fatal(createESIndexErr)
+			return createESIndexErr
 		}
 
 		if !createESIndex.Acknowledged {
-			log.Fatalf("Creating of index %s is not acknowledged\n", idxName)
+			return fmt.Errorf("Creating of index %s is not acknowledged", idxName)
 		}
 
-		log.Printf(" Success (%v)\n", time.Since(start))
+		log.Infof("Success (%v)", time.Since(start))
 	}
 
 	return nil
