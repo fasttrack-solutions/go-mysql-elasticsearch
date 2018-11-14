@@ -46,14 +46,21 @@ const (
 	StatusGreen string = "green"
 )
 
-func waitForES(url string) error {
+func waitForES(url, user, pass string) error {
 	type esResp struct {
 		Status string `json:"status"`
 	}
 
 	log.Infof("Connecting to ES [%s]", url)
 	for {
-		resp, respErr := http.Get(fmt.Sprintf("%s/_cluster/health?pretty", url))
+		req, reqErr := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/_cluster/health?pretty", url), nil)
+		if reqErr != nil {
+			log.Fatal(reqErr)
+		}
+
+		req.SetBasicAuth(user, pass)
+
+		resp, respErr := new(http.Client).Do(req)
 		if respErr != nil || resp.StatusCode != http.StatusOK {
 			log.Infof("Failed to connect to ES [%s], reconnecting in 5 seconds", url)
 
@@ -85,7 +92,7 @@ func waitForES(url string) error {
 	return nil
 }
 
-func createIndexes(url, mappingsDir string) error {
+func createIndexes(url, mappingsDir, user, pass string) error {
 	// List available mappings.
 	files, filesErr := ioutil.ReadDir(mappingsDir)
 	if filesErr != nil {
@@ -111,7 +118,7 @@ func createIndexes(url, mappingsDir string) error {
 	// Connect to ES.
 	ctx := context.Background()
 
-	esClient, esClientErr := es.NewClient(es.SetURL(url))
+	esClient, esClientErr := es.NewClient(es.SetURL(url), es.SetBasicAuth(user, pass))
 	if esClientErr != nil {
 		return fmt.Errorf("Failed to connect to ES: %v", esClientErr)
 	}
@@ -172,12 +179,12 @@ func NewClient(conf *ClientConfig) (*Client, error) {
 		c.c = &http.Client{}
 	}
 
-	err := waitForES(c.Protocol + "://" + c.Addr)
+	err := waitForES(c.Protocol+"://"+c.Addr, c.User, c.Password)
 	if err != nil {
 		return nil, err
 	}
 
-	err = createIndexes(c.Protocol+"://"+c.Addr, conf.MappingsDir)
+	err = createIndexes(c.Protocol+"://"+c.Addr, conf.MappingsDir, c.User, c.Password)
 	if err != nil {
 		return nil, err
 	}
