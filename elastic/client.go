@@ -118,7 +118,7 @@ func createIndexes(url, mappingsDir, user, pass string) error {
 	// Connect to ES.
 	ctx := context.Background()
 
-	esClient, esClientErr := es.NewClient(es.SetURL(url), es.SetBasicAuth(user, pass))
+	esClient, esClientErr := es.NewClient(es.SetURL(url), es.SetBasicAuth(user, pass), es.SetSniff(false))
 	if esClientErr != nil {
 		return fmt.Errorf("Failed to connect to ES: %v", esClientErr)
 	}
