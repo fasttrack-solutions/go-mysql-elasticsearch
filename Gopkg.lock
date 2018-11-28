@@ -18,6 +18,22 @@
   revision = "ff120f8dc147f9250185cf51414c100647044505"
 
 [[projects]]
+  branch = "master"
+  digest = "1:3db30c2a57d26375f9c73c7e011f9945e60a738f6dc65b973d474a69866a6108"
+  name = "github.com/fasttrack-solutions/go-mysql"
+  packages = [
+    "canal",
+    "client",
+    "dump",
+    "mysql",
+    "packet",
+    "replication",
+    "schema",
+  ]
+  pruneopts = "NUT"
+  revision = "f38deda480a75d07893cf8b2529a73d34edf186b"
+
+[[projects]]
   digest = "1:1ec082b4d1039a72df4d81363a277de2c57d97c601790b7e1581020f8bd3cac5"
   name = "github.com/go-redis/redis"
   packages = [
@@ -138,22 +154,6 @@
   revision = "a4d157e46fa3e08b7e7ff329af341fa3ff86c02c"
 
 [[projects]]
-  branch = "master"
-  digest = "1:192b1d76cb5ee02238e8d4c432ac2b03bd791e034e23b3fe12db9cfb5202e4f7"
-  name = "github.com/siddontang/go-mysql"
-  packages = [
-    "canal",
-    "client",
-    "dump",
-    "mysql",
-    "packet",
-    "replication",
-    "schema",
-  ]
-  pruneopts = "NUT"
-  revision = "2d151e326c1a7193d6c374dba6fbb0db3435bf05"
-
-[[projects]]
   digest = "1:a433b75f39c9295e8201dc9b6e50d6f0ba22b0f81e396f425a87802ee0bfa109"
   name = "gopkg.in/olivere/elastic.v6"
   packages = ["."]
@@ -167,15 +167,15 @@
   input-imports = [
     "github.com/BurntSushi/toml",
     "github.com/alex-ant/envs",
+    "github.com/fasttrack-solutions/go-mysql/canal",
+    "github.com/fasttrack-solutions/go-mysql/client",
+    "github.com/fasttrack-solutions/go-mysql/mysql",
+    "github.com/fasttrack-solutions/go-mysql/replication",
+    "github.com/fasttrack-solutions/go-mysql/schema",
     "github.com/go-redis/redis",
     "github.com/juju/errors",
     "github.com/pingcap/check",
     "github.com/siddontang/go-log/log",
-    "github.com/siddontang/go-mysql/canal",
-    "github.com/siddontang/go-mysql/client",
-    "github.com/siddontang/go-mysql/mysql",
-    "github.com/siddontang/go-mysql/replication",
-    "github.com/siddontang/go-mysql/schema",
     "github.com/siddontang/go/ioutil2",
     "github.com/siddontang/go/sync2",
     "gopkg.in/olivere/elastic.v6",

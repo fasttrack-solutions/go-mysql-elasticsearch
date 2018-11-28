@@ -10,10 +10,10 @@ import (
 	"time"
 
 	"github.com/BurntSushi/toml"
+	"github.com/fasttrack-solutions/go-mysql/mysql"
 	"github.com/go-redis/redis"
 	"github.com/juju/errors"
 	"github.com/siddontang/go-log/log"
-	"github.com/siddontang/go-mysql/mysql"
 	"github.com/siddontang/go/ioutil2"
 )
 

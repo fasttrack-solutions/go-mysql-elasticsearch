@@ -8,9 +8,9 @@ import (
 	"time"
 
 	"github.com/fasttrack-solutions/go-mysql-elasticsearch/elastic"
+	"github.com/fasttrack-solutions/go-mysql/client"
+	"github.com/fasttrack-solutions/go-mysql/mysql"
 	. "github.com/pingcap/check"
-	"github.com/siddontang/go-mysql/client"
-	"github.com/siddontang/go-mysql/mysql"
 )
 
 var myAddr = flag.String("my_addr", "127.0.0.1:3306", "MySQL addr")

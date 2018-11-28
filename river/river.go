@@ -8,9 +8,9 @@ import (
 	"sync"
 
 	"github.com/fasttrack-solutions/go-mysql-elasticsearch/elastic"
+	"github.com/fasttrack-solutions/go-mysql/canal"
 	"github.com/juju/errors"
 	"github.com/siddontang/go-log/log"
-	"github.com/siddontang/go-mysql/canal"
 )
 
 // ErrRuleNotExist is the error if rule is not defined.

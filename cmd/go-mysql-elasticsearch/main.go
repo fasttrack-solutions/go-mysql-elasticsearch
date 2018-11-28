@@ -9,9 +9,9 @@ import (
 
 	"github.com/alex-ant/envs"
 	"github.com/fasttrack-solutions/go-mysql-elasticsearch/river"
+	myc "github.com/fasttrack-solutions/go-mysql/client"
 	"github.com/juju/errors"
 	"github.com/siddontang/go-log/log"
-	myc "github.com/siddontang/go-mysql/client"
 )
 
 var (
