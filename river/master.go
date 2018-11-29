@@ -65,7 +65,7 @@ func newMasterInfo(c *Config) (*masterInfo, error) {
 			return nil, pingErr
 		}
 
-		key := fmt.Sprintf("%s:%s", redisMIHashKey, mi.redisKeyPostfix)
+		key := redisMIHashKey + mi.redisKeyPostfix
 
 		e := mi.redisClient.Exists(key)
 		if e.Err() != nil {
@@ -100,7 +100,7 @@ func (m *masterInfo) load() error {
 
 	switch m.mode {
 	case redisStorageMore:
-		key := fmt.Sprintf("%s:%s", redisMIHashKey, m.redisKeyPostfix)
+		key := redisMIHashKey + m.redisKeyPostfix
 
 		res := m.redisClient.HGetAll(key)
 		if res.Err() != nil {
@@ -164,7 +164,7 @@ func (m *masterInfo) Save(pos mysql.Position) error {
 
 	switch m.mode {
 	case redisStorageMore:
-		key := fmt.Sprintf("%s:%s", redisMIHashKey, m.redisKeyPostfix)
+		key := redisMIHashKey + m.redisKeyPostfix
 
 		m.redisClient.HMSet(key, map[string]interface{}{
 			redisBinNameField: m.Data.Name,
