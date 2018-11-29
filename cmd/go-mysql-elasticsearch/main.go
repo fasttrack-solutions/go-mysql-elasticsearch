@@ -25,9 +25,10 @@ var (
 	myPass    = flag.String("myPass", "root", "MySQL password")
 	myCharset = flag.String("myCharset", "utf8", "MySQL DB charset")
 
-	redisAddr = flag.String("redisAddr", "127.0.0.1:6379", "Redis addr")
-	redisPass = flag.String("redisPass", "", "Redis password")
-	redisDB   = flag.Int("redisDB", 0, "Redis database")
+	redisAddr       = flag.String("redisAddr", "127.0.0.1:6379", "Redis addr")
+	redisPass       = flag.String("redisPass", "", "Redis password")
+	redisDB         = flag.Int("redisDB", 0, "Redis database")
+	redisKeyPostfix = flag.String("redisKeyPostfix", "", "Redis key postfix")
 
 	esAddr  = flag.String("esAddr", "127.0.0.1:9200", "Elasticsearch addr")
 	esUser  = flag.String("esUser", "", "Elasticsearch user")
@@ -82,6 +83,7 @@ func main() {
 	cfg.MyCharset = *myCharset
 	cfg.RedisAddr = *redisAddr
 	cfg.RedisPassword = *redisPass
+	cfg.RedisKeyPostfix = *redisKeyPostfix
 	cfg.RedisDB = uint32(*redisDB)
 	cfg.ESAddr = *esAddr
 	cfg.ESUser = *esUser

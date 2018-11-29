@@ -24,9 +24,10 @@ type Config struct {
 	MyPassword string
 	MyCharset  string
 
-	RedisAddr     string
-	RedisPassword string
-	RedisDB       uint32
+	RedisAddr       string
+	RedisPassword   string
+	RedisDB         uint32
+	RedisKeyPostfix string
 
 	ESHttps    bool
 	ESAddr     string

@@ -26,6 +26,7 @@ It uses `mysqldump` to fetch the origin data at first, then syncs data increment
 |redisAddr|REDISADDR|127.0.0.1:6379|Redis addr|
 |redisDB|REDISDB|0|Redis database|
 |redisPass|REDISPASS||Redis password|
+|redisKeyPostfix|REDISKEYPOSTFIX||Redis key postfix|
 |serverID|SERVERID|1001|MySQL server ID, as a pseudo slave|
 |skipMasterData|SKIPMASTERDATA|false|if no privilege to use mysqldump with --master-data, we must skip it|
 |skipNoPkTable|SKIPNOPKTABLE|false|Ignore table without primary key|

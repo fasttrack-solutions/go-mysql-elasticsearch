@@ -34,8 +34,9 @@ type masterInfoData struct {
 }
 
 type masterInfo struct {
-	redisClient *redis.Client
-	mode        string
+	redisClient     *redis.Client
+	redisKeyPostfix string
+	mode            string
 
 	sync.RWMutex
 
@@ -49,6 +50,7 @@ func newMasterInfo(c *Config) (*masterInfo, error) {
 	mi := new(masterInfo)
 
 	mi.mode = c.DataStorage
+	mi.redisKeyPostfix = c.RedisKeyPostfix
 
 	switch c.DataStorage {
 	case redisStorageMore:
@@ -63,13 +65,15 @@ func newMasterInfo(c *Config) (*masterInfo, error) {
 			return nil, pingErr
 		}
 
-		e := mi.redisClient.Exists(redisMIHashKey)
+		key := fmt.Sprintf("%s:%s", redisMIHashKey, mi.redisKeyPostfix)
+
+		e := mi.redisClient.Exists(key)
 		if e.Err() != nil {
 			return nil, e.Err()
 		}
 
 		if e.Val() == 0 {
-			mi.redisClient.HMSet(redisMIHashKey, map[string]interface{}{
+			mi.redisClient.HMSet(key, map[string]interface{}{
 				redisBinNameField: "",
 				redisBinPosField:  0,
 			})
@@ -96,7 +100,9 @@ func (m *masterInfo) load() error {
 
 	switch m.mode {
 	case redisStorageMore:
-		res := m.redisClient.HGetAll(redisMIHashKey)
+		key := fmt.Sprintf("%s:%s", redisMIHashKey, m.redisKeyPostfix)
+
+		res := m.redisClient.HGetAll(key)
 		if res.Err() != nil {
 			return errors.Trace(res.Err())
 		}
@@ -158,7 +164,9 @@ func (m *masterInfo) Save(pos mysql.Position) error {
 
 	switch m.mode {
 	case redisStorageMore:
-		m.redisClient.HMSet(redisMIHashKey, map[string]interface{}{
+		key := fmt.Sprintf("%s:%s", redisMIHashKey, m.redisKeyPostfix)
+
+		m.redisClient.HMSet(key, map[string]interface{}{
 			redisBinNameField: m.Data.Name,
 			redisBinPosField:  m.Data.Pos,
 		})
