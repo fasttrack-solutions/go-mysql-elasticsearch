@@ -19,7 +19,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:3db30c2a57d26375f9c73c7e011f9945e60a738f6dc65b973d474a69866a6108"
+  digest = "1:47c89bed947fbc24f13d3cf76c159802606f31bd7aa9db574c84e670e27fe786"
   name = "github.com/fasttrack-solutions/go-mysql"
   packages = [
     "canal",
@@ -31,7 +31,7 @@
     "schema",
   ]
   pruneopts = "NUT"
-  revision = "f38deda480a75d07893cf8b2529a73d34edf186b"
+  revision = "4a215cc0d5e6b2fbba7ac88f36d6d0f55e21f2ca"
 
 [[projects]]
   digest = "1:1ec082b4d1039a72df4d81363a277de2c57d97c601790b7e1581020f8bd3cac5"

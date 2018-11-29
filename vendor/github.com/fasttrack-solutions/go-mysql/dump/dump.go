@@ -1,6 +1,7 @@
 package dump
 
 import (
+	"compress/gzip"
 	"fmt"
 	"io"
 	"os"
@@ -210,11 +211,14 @@ func (d *Dumper) DumpAndParse(h ParseHandler) error {
 
 	log.Infof("created dump file %s, dumping MySQL data..", filename)
 
-	dumpErr := d.Dump(fo)
+	gzW := gzip.NewWriter(fo)
+
+	dumpErr := d.Dump(gzW)
 	if dumpErr != nil {
 		return errors.Trace(dumpErr)
 	}
 
+	gzW.Close()
 	fo.Close()
 
 	log.Info("MySQL dump finished, parsing...")
@@ -225,12 +229,18 @@ func (d *Dumper) DumpAndParse(h ParseHandler) error {
 		return errors.Trace(fiErr)
 	}
 
+	gzR, gzRErr := gzip.NewReader(fi)
+	if gzRErr != nil {
+		return errors.Trace(gzRErr)
+	}
+
 	defer func() {
+		gzR.Close()
 		fi.Close()
 		os.Remove(filename)
 	}()
 
-	pErr := Parse(fi, h, !d.masterDataSkipped)
+	pErr := Parse(gzR, h, !d.masterDataSkipped)
 	if pErr != nil {
 		return errors.Trace(pErr)
 	}
