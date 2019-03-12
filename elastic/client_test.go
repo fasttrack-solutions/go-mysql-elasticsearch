@@ -26,7 +26,7 @@ func (s *elasticTestSuite) SetUpSuite(c *C) {
 	cfg.Addr = fmt.Sprintf("%s:%d", *host, *port)
 	cfg.User = ""
 	cfg.Password = ""
-	s.c = NewClient(cfg)
+	s.c, _ = NewClient(cfg)
 }
 
 func (s *elasticTestSuite) TearDownSuite(c *C) {
