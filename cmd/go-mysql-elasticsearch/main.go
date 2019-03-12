@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"os"
 	"os/signal"
 	"syscall"
@@ -46,6 +47,9 @@ var (
 
 	flushBulkTime = flag.Duration("flushBulkTime", time.Millisecond*200, "Force flush the pending requests if we don't have enough items >= bulkSize")
 	skipNoPkTable = flag.Bool("skipNoPkTable", false, "Ignore table without primary key")
+
+	brandID          = flag.Int("brand-id", 0, "Brand ID")
+	useSingleRedisDB = flag.Bool("use-single-redis-db", false, "Use single Redis DB (0), dismiss brand ID in keys if different DBs")
 )
 
 func main() {
@@ -83,7 +87,6 @@ func main() {
 	cfg.MyCharset = *myCharset
 	cfg.RedisAddr = *redisAddr
 	cfg.RedisPassword = *redisPass
-	cfg.RedisKeyPostfix = *redisKeyPostfix
 	cfg.RedisDB = uint32(*redisDB)
 	cfg.ESAddr = *esAddr
 	cfg.ESUser = *esUser
@@ -98,6 +101,13 @@ func main() {
 	cfg.SkipMasterData = *skipMasterData
 	cfg.FlushBulkTime = *flushBulkTime
 	cfg.SkipNoPkTable = *skipNoPkTable
+
+	// Add brand ID to Redis key suffix if single DB mode selected and force 0 DB.
+	cfg.RedisKeyPostfix = *redisKeyPostfix
+	if *useSingleRedisDB {
+		cfg.RedisKeyPostfix += fmt.Sprintf("_%d", *brandID)
+		cfg.RedisDB = 0
+	}
 
 	// Reconnect to MySQL.
 	log.Infof("Connecting to MySQL [%s]", cfg.MyAddr)

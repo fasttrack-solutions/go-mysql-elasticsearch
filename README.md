@@ -6,6 +6,7 @@ It uses `mysqldump` to fetch the origin data at first, then syncs data increment
 
 |Flag|Env. variable|Default value|Description|
 |:----|:----|:---|:---|
+|brand-id|BRAND_ID|0|Brand ID|
 |bulkSize|BULKSIZE|1024|Minimal number of items to be inserted in a single bulk|
 |config|CONFIG|./etc/river.toml|go-mysql-elasticsearch config file|
 |dataDir|DATADIR|./go-mysql-elasticsearch-data|Path for go-mysql-elasticsearch to save data|
@@ -25,13 +26,13 @@ It uses `mysqldump` to fetch the origin data at first, then syncs data increment
 |myUser|MYUSER|root|MySQL user|
 |redisAddr|REDISADDR|127.0.0.1:6379|Redis addr|
 |redisDB|REDISDB|0|Redis database|
-|redisPass|REDISPASS||Redis password|
 |redisKeyPostfix|REDISKEYPOSTFIX||Redis key postfix|
+|redisPass|REDISPASS||Redis password|
 |serverID|SERVERID|1001|MySQL server ID, as a pseudo slave|
 |skipMasterData|SKIPMASTERDATA|false|if no privilege to use mysqldump with --master-data, we must skip it|
 |skipNoPkTable|SKIPNOPKTABLE|false|Ignore table without primary key|
 |statAddr|STATADDR|127.0.0.1:12800|Inner HTTP status address|
-
+|use-single-redis-db|USE_SINGLE_REDIS_DB|false|Use single Redis DB (0), dismiss brand ID in keys if different DBs|
 
 ## Install
 
