@@ -18,6 +18,14 @@
   revision = "ff120f8dc147f9250185cf51414c100647044505"
 
 [[projects]]
+  digest = "1:ffe9824d294da03b391f44e1ae8281281b4afc1bdaa9588c9097785e3af10cec"
+  name = "github.com/davecgh/go-spew"
+  packages = ["spew"]
+  pruneopts = "NUT"
+  revision = "8991bc29aa16c548c550c7ff78260e27b9ab7c73"
+  version = "v1.1.1"
+
+[[projects]]
   branch = "master"
   digest = "1:47c89bed947fbc24f13d3cf76c159802606f31bd7aa9db574c84e670e27fe786"
   name = "github.com/fasttrack-solutions/go-mysql"
@@ -49,6 +57,14 @@
   pruneopts = "NUT"
   revision = "b3d9bf10f6666b2ee5100a6f3f84f4caf3b4e37d"
   version = "v6.14.2"
+
+[[projects]]
+  digest = "1:31e04b7544f50d5ccc4a61df773228d9fe9a080c464dc00701a5f15a667aa022"
+  name = "github.com/go-zoo/bone"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "d7ce1372afa7a4319e9b84ab08593d1342a8c10a"
+  version = "1.3"
 
 [[projects]]
   branch = "master"
@@ -115,6 +131,14 @@
   version = "v0.8.0"
 
 [[projects]]
+  digest = "1:0028cb19b2e4c3112225cd871870f2d9cf49b9b4276531f03438a88e94be86fe"
+  name = "github.com/pmezard/go-difflib"
+  packages = ["difflib"]
+  pruneopts = "NUT"
+  revision = "792786c7400a136282c1664665ae0a8db921c6c2"
+  version = "v1.0.0"
+
+[[projects]]
   digest = "1:6bc0652ea6e39e22ccd522458b8bdd8665bf23bdc5a20eec90056e4dc7e273ca"
   name = "github.com/satori/go.uuid"
   packages = ["."]
@@ -154,6 +178,29 @@
   revision = "a4d157e46fa3e08b7e7ff329af341fa3ff86c02c"
 
 [[projects]]
+  digest = "1:85adecf1dbfae5769cc62a8bcea6498f8e9f0e2452e4e6686eb36fa4428a5a6e"
+  name = "github.com/stretchr/testify"
+  packages = [
+    "assert",
+    "require",
+  ]
+  pruneopts = "NUT"
+  revision = "ffdc059bfe9ce6a4e144ba849dbedead332c6053"
+  version = "v1.3.0"
+
+[[projects]]
+  digest = "1:5ce91fa8e28b59b505dd189607e75cb0284645b9d64dd8ada970f0d7fd6caf16"
+  name = "gopkg.in/oauth2.v3"
+  packages = [
+    ".",
+    "errors",
+    "server",
+  ]
+  pruneopts = "NUT"
+  revision = "42a3322613e4bf2a7741eed0daf99c34d410e219"
+  version = "v3.10.0"
+
+[[projects]]
   digest = "1:a433b75f39c9295e8201dc9b6e50d6f0ba22b0f81e396f425a87802ee0bfa109"
   name = "gopkg.in/olivere/elastic.v6"
   packages = ["."]
@@ -173,11 +220,14 @@
     "github.com/fasttrack-solutions/go-mysql/replication",
     "github.com/fasttrack-solutions/go-mysql/schema",
     "github.com/go-redis/redis",
+    "github.com/go-zoo/bone",
     "github.com/juju/errors",
     "github.com/pingcap/check",
     "github.com/siddontang/go-log/log",
     "github.com/siddontang/go/ioutil2",
     "github.com/siddontang/go/sync2",
+    "github.com/stretchr/testify/require",
+    "gopkg.in/oauth2.v3/server",
     "gopkg.in/olivere/elastic.v6",
   ]
   solver-name = "gps-cdcl"

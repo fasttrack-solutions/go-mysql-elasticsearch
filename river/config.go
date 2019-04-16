@@ -16,6 +16,8 @@ type SourceConfig struct {
 
 // Config is the configuration
 type Config struct {
+	TT TimeTracker
+
 	DataStorage string
 	MappingsDir string
 
