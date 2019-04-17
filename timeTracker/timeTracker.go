@@ -40,13 +40,13 @@ func (t *TimeTracker) ThirdsDiff() int {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
-	thirds := splitSlice(t.durations, 3)
-	if len(thirds) != 3 {
-		return 0
+	third1N := len(t.durations) / 3
+	if len(t.durations)%3 > 0 {
+		third1N++
 	}
 
-	oldAvg := avg(thirds[0])
-	newAvg := avg(thirds[2])
+	oldAvg := avg(t.durations[:third1N])
+	newAvg := avg(t.durations[len(t.durations)-third1N:])
 
 	q := int(newAvg) * 100 / int(oldAvg)
 
