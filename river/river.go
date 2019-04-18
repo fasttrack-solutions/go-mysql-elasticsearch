@@ -6,6 +6,7 @@ import (
 	"regexp"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/fasttrack-solutions/go-mysql-elasticsearch/elastic"
 	"github.com/fasttrack-solutions/go-mysql/canal"
@@ -15,6 +16,11 @@ import (
 
 // ErrRuleNotExist is the error if rule is not defined.
 var ErrRuleNotExist = errors.New("rule is not exist")
+
+// TimeTracker defines time tracker interface.
+type TimeTracker interface {
+	Add(d time.Duration)
+}
 
 // River is a pluggable service within Elasticsearch pulling data then indexing it into Elasticsearch.
 // We use this definition here too, although it may not run within Elasticsearch.

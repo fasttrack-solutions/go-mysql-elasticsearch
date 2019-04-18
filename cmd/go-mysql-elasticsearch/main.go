@@ -9,13 +9,17 @@ import (
 	"time"
 
 	"github.com/alex-ant/envs"
+	"github.com/fasttrack-solutions/go-mysql-elasticsearch/api"
 	"github.com/fasttrack-solutions/go-mysql-elasticsearch/river"
+	"github.com/fasttrack-solutions/go-mysql-elasticsearch/timeTracker"
 	myc "github.com/fasttrack-solutions/go-mysql/client"
 	"github.com/juju/errors"
 	"github.com/siddontang/go-log/log"
 )
 
 var (
+	apiPort = flag.Int("api-port", 3000, "HTTP API port number")
+
 	configFile = flag.String("config", "./etc/river.toml", "go-mysql-elasticsearch config file")
 
 	dataStorage = flag.String("dataStorage", "redis", "Data storage (redis/fs)")
@@ -40,7 +44,7 @@ var (
 	statAddr       = flag.String("statAddr", "127.0.0.1:12800", "Inner HTTP status address")
 	serverID       = flag.Int("serverID", 1001, "MySQL server ID, as a pseudo slave")
 	flavor         = flag.String("flavor", "mysql", "Flavor: mysql or mariadb")
-	bulkSize       = flag.Int("bulkSize", 1024, "Minimal number of items to be inserted in a single bulk")
+	bulkSize       = flag.Int("bulkSize", 256, "Minimal number of items to be inserted in a single bulk")
 	execution      = flag.String("exec", "mysqldump", "mysqldump execution path")
 	skipMasterData = flag.Bool("skipMasterData", false, "if no privilege to use mysqldump with --master-data, we must skip it")
 	logLevel       = flag.String("logLevel", "Info", "log level")
@@ -50,6 +54,8 @@ var (
 
 	brandID          = flag.Int("brand-id", 0, "Brand ID")
 	useSingleRedisDB = flag.Bool("use-single-redis-db", false, "Use single Redis DB (0), dismiss brand ID in keys if different DBs")
+
+	bulksToTrack = flag.Int("bulks-to-track", 100, "Bulk requests to keep in time tracker")
 )
 
 func main() {
@@ -102,6 +108,10 @@ func main() {
 	cfg.FlushBulkTime = *flushBulkTime
 	cfg.SkipNoPkTable = *skipNoPkTable
 
+	ttInstance := ttracker.New(*bulksToTrack)
+
+	cfg.TT = ttInstance
+
 	// Add brand ID to Redis key suffix if single DB mode selected and force 0 DB.
 	cfg.RedisKeyPostfix = *redisKeyPostfix
 	if *useSingleRedisDB {
@@ -122,6 +132,16 @@ func main() {
 		break
 	}
 
+	// Initialize API HTTP server.
+	apiServer := api.New(*apiPort, ttInstance)
+
+	// Start API HTTP server.
+	apiStartErr := apiServer.Start()
+	if apiStartErr != nil {
+		log.Fatal(apiStartErr)
+	}
+
+	// Initialize new river.
 	r, err := river.NewRiver(cfg)
 	if err != nil {
 		println(errors.ErrorStack(err))
