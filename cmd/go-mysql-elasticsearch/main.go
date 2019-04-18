@@ -55,7 +55,7 @@ var (
 	brandID          = flag.Int("brand-id", 0, "Brand ID")
 	useSingleRedisDB = flag.Bool("use-single-redis-db", false, "Use single Redis DB (0), dismiss brand ID in keys if different DBs")
 
-	bulksToTrack = flag.Int("bulks-to-track", 10, "Bulk requests to keep in time tracker")
+	bulksToTrack = flag.Int("bulks-to-track", 100, "Bulk requests to keep in time tracker")
 )
 
 func main() {

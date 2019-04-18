@@ -9,7 +9,7 @@ It uses `mysqldump` to fetch the origin data at first, then syncs data increment
 |api-port|API_PORT|3000|HTTP API port number|
 |brand-id|BRAND_ID|0|Brand ID|
 |bulkSize|BULKSIZE|256|Minimal number of items to be inserted in a single bulk|
-|bulks-to-track|BULKS_TO_TRACK|10|Bulk requests to keep in time tracker|
+|bulks-to-track|BULKS_TO_TRACK|100|Bulk requests to keep in time tracker|
 |config|CONFIG|./etc/river.toml|go-mysql-elasticsearch config file|
 |dataDir|DATADIR|./go-mysql-elasticsearch-data|Path for go-mysql-elasticsearch to save data|
 |dataStorage|DATASTORAGE|redis|Data storage (redis/fs)|
