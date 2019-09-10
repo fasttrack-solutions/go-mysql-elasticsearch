@@ -318,7 +318,7 @@ func (r *River) Run() error {
 	return nil
 }
 
-func (r *River) PublicPosition() mysql.Position {
+func (r *River) GetPosition() mysql.Position {
 	return r.master.Position()
 }
 

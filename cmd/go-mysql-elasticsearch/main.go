@@ -36,9 +36,9 @@ var (
 	redisDB         = flag.Int("redisDB", 0, "Redis database")
 	redisKeyPostfix = flag.String("redisKeyPostfix", "", "Redis key postfix")
 
-	verificatorCronSpec         = flag.String("verificatorCronSpec", "*/10 * * * * *", "Schedule to run verificator to make sure service is in sync")
-	redisKeyPostfixSuicideCount = flag.String("redisKeyPostfixSuicideCount", "", "Redis key postfix for suicide count")
-	redisKeyPostfixAllowedToRun = flag.String("redisKeyPostfixAllowedToRun", "", "Redis key postfix for allowed to run")
+	verificatorTickerInterval   = flag.Duration("verificator-ticker-interval", time.Second*10, "At which interval the verificator will run")
+	redisKeyPostfixSuicideCount = flag.String("redisKey-Postfix-SuicideCount", "", "Redis key postfix for suicide count")
+	redisKeyPostfixAllowedToRun = flag.String("redisKey-Postfix-AllowedToRun", "", "Redis key postfix for allowed to run")
 	unSyncedThreshold           = flag.Int("unsynced-threshhold", 1000, "Amount of allowed unsynced binlog bytes during n threshold seconds")
 	secondsThreshold            = flag.Int("unsynced-threshhold-seconds", 30, "Amount of seconds during which to check unsynced-threshold")
 
@@ -164,8 +164,25 @@ func main() {
 	}()
 
 	verificatorErrorChan := make(chan error)
-	err = verificator.InitAndStart(r, *verificatorCronSpec, *brandID, *slackWebhookURL, *slackChannelName, *redisAddr, *redisPass, *redisKeyPostfixSuicideCount,
-		*redisKeyPostfixAllowedToRun, *redisDB, *myUser, *myPass, *myAddr, *secondsThreshold, *unSyncedThreshold, verificatorErrorChan)
+	verificatorConfig := verificator.Config{
+		River:                       r,
+		VerificatorTickerInterval:   *verificatorTickerInterval,
+		BrandID:                     *brandID,
+		SlackWebhookURL:             *slackWebhookURL,
+		SlackChannelName:            *slackChannelName,
+		RedisAddr:                   *redisAddr,
+		RedisPassword:               *redisPass,
+		RedisKeyPostfixSuicideCount: *redisKeyPostfixSuicideCount,
+		RedisKeyPostfixAllowedToRun: *redisKeyPostfixAllowedToRun,
+		RedisDB:                     *redisDB,
+		MyUser:                      *myUser,
+		MyPass:                      *myPass,
+		MyAddr:                      *myAddr,
+		SecondsThreshold:            *secondsThreshold,
+		UnSyncedThreshold:           *unSyncedThreshold,
+		ErrorChan:                   verificatorErrorChan,
+	}
+	v, err := verificator.InitAndStart(verificatorConfig)
 	if err != nil {
 		log.Fatal("Could not start verificator! Err: ", err)
 	}
@@ -173,6 +190,7 @@ func main() {
 	select {
 	case n := <-sc:
 		log.Infof("receive signal %v, closing", n)
+		v.Shutdown()
 	case <-r.Ctx().Done():
 		log.Infof("context is done with %v, closing", r.Ctx().Err())
 	case err := <-verificatorErrorChan:

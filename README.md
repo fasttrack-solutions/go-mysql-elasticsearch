@@ -30,9 +30,9 @@ It uses `mysqldump` to fetch the origin data at first, then syncs data increment
 |redisDB|REDISDB|0|Redis database|
 |redisPass|REDISPASS||Redis password|
 |redisKeyPostfix|REDISKEYPOSTFIX||Redis key postfix|
-|verificatorCronSpec|VERIFICATORCRONSPEC|*/10 * * * * *|Schedule to run verificator to make sure service is in sync|
-|redisKeyPostfixSuicideCount|REDISKEYPOSTFIXSUICIDECOUNT||Redis key postfix for suicide count|
-|redisKeyPostfixAllowedToRun|REDISKEYPOSTFIXALLOWEDTORUN||Redis key postfix for allowed to run|
+|verificatorTickerInterval|VERIFICATOR_TICKER_INTERVAL|10s|At which interval the verificator will run|
+|redisKeyPostfixSuicideCount|REDISKEY_POSTFIX_SUICIDECOUNT||Redis key postfix for suicide count|
+|redisKeyPostfixAllowedToRun|REDISKEY_POSTFIX_ALLOWEDTORUN||Redis key postfix for allowed to run|
 |unSyncedThreshold|UNSYNCED_THRESHHOLD|1000|Amount of allowed unsynced binlog bytes during n threshold seconds|
 |secondsThreshold|UNSYNCED-THRESHHOLD-SECONDS|30|Amount of seconds during which to check unsynced-threshold|
 |serverID|SERVERID|1001|MySQL server ID, as a pseudo slave|

@@ -3,7 +3,7 @@ package verificator
 import (
 	"errors"
 	"fmt"
-	"log"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -13,14 +13,34 @@ import (
 	"github.com/go-redis/redis"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
-	"github.com/robfig/cron"
+	log "github.com/siddontang/go-log/log"
 )
 
 // NoTTL simple enum to avoid re-typing
 const NoTTL = -1
 
+// Config containing properties to set up verificator
+type Config struct {
+	River                       *river.River
+	VerificatorTickerInterval   time.Duration
+	BrandID                     int
+	SlackWebhookURL             string
+	SlackChannelName            string
+	RedisAddr                   string
+	RedisPassword               string
+	RedisKeyPostfixSuicideCount string
+	RedisKeyPostfixAllowedToRun string
+	RedisDB                     int
+	MyUser                      string
+	MyPass                      string
+	MyAddr                      string
+	SecondsThreshold            int
+	UnSyncedThreshold           int
+	ErrorChan                   chan (error)
+}
+
 // Verificator is the main struct for the verificator
-type Verificator struct {
+type verificator struct {
 	suicideCount         int
 	overThresholdCounter uint32
 	zeroDate             time.Time
@@ -30,8 +50,8 @@ type Verificator struct {
 	currentBinLogDiff    uint32
 
 	redisClient                   *redis.Client
-	SuicideCountRedisKey          string
-	ServiceIsAllowedToRunRedisKey string
+	suicideCountRedisKey          string
+	serviceIsAllowedToRunRedisKey string
 
 	brandID int
 
@@ -41,63 +61,83 @@ type Verificator struct {
 
 	slackWebhookURL  string
 	slackChannelName string
+
+	ticker     *time.Ticker
+	tickerDone chan (bool)
 }
 
-// InitAndStart initializes verificator and cron
-func InitAndStart(r *river.River, verificatorCronSpec string, brandID int, slackWebhookURL, slackChannelName, redisAddr, redisPassword,
-	redisKeyPostfixSuicideCount, redisKeyPostfixAllowedToRun string,
-	redisDB int, myUser, myPass, myAddr string, secondsThreshold, unSyncedThreshold int, errorChan chan (error)) error {
+// InitAndStart initializes verificator and ticker
+func InitAndStart(conf Config) (*verificator, error) {
 	fmt.Println("Starting verificator")
 	var err error
 
 	redisClient := redis.NewClient(&redis.Options{
-		Addr:     redisAddr,
-		Password: redisPassword,
-		DB:       redisDB,
+		Addr:     conf.RedisAddr,
+		Password: conf.RedisPassword,
+		DB:       conf.RedisDB,
 	})
 
-	v := Verificator{
+	v := verificator{
 		overThresholdCounter:          0,
 		zeroDate:                      time.Now(),
-		threshold:                     uint32(unSyncedThreshold),
-		secondsThreshold:              secondsThreshold,
+		threshold:                     uint32(conf.UnSyncedThreshold),
+		secondsThreshold:              conf.SecondsThreshold,
 		redisClient:                   redisClient,
-		SuicideCountRedisKey:          "go-mysql-elasticsearch-suicide-count",
-		ServiceIsAllowedToRunRedisKey: "go-mysql-elasticsearch-allowed-to-run",
-		brandID:                       brandID,
-		myUser:                        myUser,
-		myPass:                        myPass,
-		myAddr:                        myAddr,
-		slackWebhookURL:               slackWebhookURL,
-		slackChannelName:              slackChannelName,
+		suicideCountRedisKey:          "go-mysql-elasticsearch-suicide-count",
+		serviceIsAllowedToRunRedisKey: "go-mysql-elasticsearch-allowed-to-run",
+		brandID:                       conf.BrandID,
+		myUser:                        conf.MyUser,
+		myPass:                        conf.MyPass,
+		myAddr:                        conf.MyAddr,
+		slackWebhookURL:               conf.SlackWebhookURL,
+		slackChannelName:              conf.SlackChannelName,
+		ticker:                        time.NewTicker(2 * time.Second),
+		tickerDone:                    make(chan bool),
 	}
 
-	if redisKeyPostfixSuicideCount != "" {
-		v.SuicideCountRedisKey = v.SuicideCountRedisKey + redisKeyPostfixSuicideCount
+	if conf.RedisKeyPostfixSuicideCount != "" {
+		v.suicideCountRedisKey = v.suicideCountRedisKey + conf.RedisKeyPostfixSuicideCount
 	}
 
-	if redisKeyPostfixAllowedToRun != "" {
-		v.ServiceIsAllowedToRunRedisKey = v.ServiceIsAllowedToRunRedisKey + redisKeyPostfixAllowedToRun
+	if conf.RedisKeyPostfixAllowedToRun != "" {
+		v.serviceIsAllowedToRunRedisKey = v.serviceIsAllowedToRunRedisKey + conf.RedisKeyPostfixAllowedToRun
 	}
 
-	err = v.doVerificationCheck(r)
+	err = v.doVerificationCheck(conf.River)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	c := cron.New()
-	c.AddFunc(verificatorCronSpec, func() {
-		err = v.doVerificationCheck(r)
+
+	go v.doTicker(func() {
+		err = v.doVerificationCheck(conf.River)
 		if err != nil {
-			errorChan <- err
+			conf.ErrorChan <- err
+			return
 		}
 	})
-	c.Start()
 
-	return nil
+	return &v, nil
 }
 
-// MySQLMasterStatus contains resulset from MYSQL
-type MySQLMasterStatus struct {
+func (v *verificator) Shutdown() {
+	log.Print("Shutting down verificator...")
+	v.redisClient.Close()
+	v.tickerDone <- true
+	os.Exit(0)
+}
+
+func (v *verificator) doTicker(callback func()) {
+	for {
+		select {
+		case <-v.tickerDone:
+			return
+		case <-v.ticker.C:
+			callback()
+		}
+	}
+}
+
+type mysqlMasterStatus struct {
 	Name            string `db:"File"`
 	Position        uint32 `db:"Position"`
 	BinlogDoDB      string `db:"Binlog_Do_DB"`
@@ -105,7 +145,7 @@ type MySQLMasterStatus struct {
 	ExecutedGTIDSet string `db:"Executed_Gtid_Set"`
 }
 
-func (v *Verificator) doVerificationCheck(r *river.River) error {
+func (v *verificator) doVerificationCheck(r *river.River) error {
 	var err error
 
 	v.allowedToRun, err = v.serviceIsAllowedToRun()
@@ -126,7 +166,7 @@ func (v *Verificator) doVerificationCheck(r *river.River) error {
 		return err
 	}
 
-	v.currentBinLogDiff = positionsDiff(mysqlMasterStatus.Position, r.PublicPosition().Pos)
+	v.currentBinLogDiff = positionsDiff(mysqlMasterStatus.Position, r.GetPosition().Pos)
 	if v.currentBinLogDiff > v.threshold {
 		v.overThresholdCounter++
 	} else if v.currentBinLogDiff == 0 {
@@ -134,7 +174,7 @@ func (v *Verificator) doVerificationCheck(r *river.River) error {
 		v.overThresholdCounter = 0
 	}
 
-	if r.PublicPosition().Pos == 0 {
+	if r.GetPosition().Pos == 0 {
 		fmt.Println("redis position 0, probably doing mysqldump")
 		return nil
 	}
@@ -169,8 +209,8 @@ func (v *Verificator) doVerificationCheck(r *river.River) error {
 	return nil
 }
 
-func (v *Verificator) getMySQLMasterStatus() (MySQLMasterStatus, error) {
-	var status MySQLMasterStatus
+func (v *verificator) getMySQLMasterStatus() (mysqlMasterStatus, error) {
+	var status mysqlMasterStatus
 
 	connStr := fmt.Sprintf("%s:%s@tcp(%s)/?parseTime=true", v.myUser, v.myPass, v.myAddr)
 	client, err := sqlx.Connect("mysql", connStr)
@@ -187,8 +227,8 @@ func (v *Verificator) getMySQLMasterStatus() (MySQLMasterStatus, error) {
 	return status, nil
 }
 
-func (v *Verificator) commitSuicide() {
-	v.redisClient.Incr(v.SuicideCountRedisKey)
+func (v *verificator) commitSuicide() {
+	v.redisClient.Incr(v.suicideCountRedisKey)
 	log.Fatal("terminating service")
 }
 
@@ -196,15 +236,15 @@ func positionsDiff(mysqlPos, redisPos uint32) uint32 {
 	return mysqlPos - redisPos
 }
 
-func (v *Verificator) secondsUnsynced() float64 {
+func (v *verificator) secondsUnsynced() float64 {
 	diff := time.Now().Sub(v.zeroDate).Seconds()
 	return diff
 }
 
-func (v *Verificator) currentSuicideCount() (int, error) {
-	res, err := v.redisClient.Get(v.SuicideCountRedisKey).Result()
+func (v *verificator) currentSuicideCount() (int, error) {
+	res, err := v.redisClient.Get(v.suicideCountRedisKey).Result()
 	if err == redis.Nil {
-		err := v.setDefaultRedisKey(v.SuicideCountRedisKey, "0")
+		err := v.setDefaultRedisKey(v.suicideCountRedisKey, "0")
 		if err != nil {
 			return 0, err
 		}
@@ -221,18 +261,18 @@ func (v *Verificator) currentSuicideCount() (int, error) {
 	return count, nil
 }
 
-func (v *Verificator) resetSuicideCount() error {
-	_, err := v.redisClient.Set(v.SuicideCountRedisKey, 0, NoTTL).Result()
+func (v *verificator) resetSuicideCount() error {
+	_, err := v.redisClient.Set(v.suicideCountRedisKey, 0, NoTTL).Result()
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (v *Verificator) serviceIsAllowedToRun() (bool, error) {
-	res, err := v.redisClient.Get(v.ServiceIsAllowedToRunRedisKey).Result()
+func (v *verificator) serviceIsAllowedToRun() (bool, error) {
+	res, err := v.redisClient.Get(v.serviceIsAllowedToRunRedisKey).Result()
 	if err == redis.Nil {
-		err := v.setDefaultRedisKey(v.ServiceIsAllowedToRunRedisKey, "1")
+		err := v.setDefaultRedisKey(v.serviceIsAllowedToRunRedisKey, "1")
 		if err != nil {
 			return false, err
 		}
@@ -245,15 +285,15 @@ func (v *Verificator) serviceIsAllowedToRun() (bool, error) {
 	return valBool, nil
 }
 
-func (v *Verificator) setServiceAsDisallowedToRun() error {
-	_, err := v.redisClient.Set(v.ServiceIsAllowedToRunRedisKey, "0", NoTTL).Result()
+func (v *verificator) setServiceAsDisallowedToRun() error {
+	_, err := v.redisClient.Set(v.serviceIsAllowedToRunRedisKey, "0", NoTTL).Result()
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (v *Verificator) setDefaultRedisKey(key string, defaultValue interface{}) error {
+func (v *verificator) setDefaultRedisKey(key string, defaultValue interface{}) error {
 	_, err := v.redisClient.Set(key, defaultValue, NoTTL).Result()
 	if err != nil {
 		return err
@@ -261,7 +301,7 @@ func (v *Verificator) setDefaultRedisKey(key string, defaultValue interface{}) e
 	return nil
 }
 
-func (v *Verificator) sendSlackWarning(message string) error {
+func (v *verificator) sendSlackWarning(message string) error {
 	if v.slackWebhookURL == "" || v.slackChannelName == "" {
 		return errors.New("No slack url or channel name set")
 	}
