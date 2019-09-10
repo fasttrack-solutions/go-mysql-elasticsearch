@@ -22,7 +22,7 @@ const NoTTL = -1
 // Config containing properties to set up verificator
 type Config struct {
 	River                       *river.River
-	VerificatorTickerInterval   time.Duration
+	VerificatorTickerInterval   int
 	BrandID                     int
 	SlackWebhookURL             string
 	SlackChannelName            string
@@ -68,7 +68,7 @@ type verificator struct {
 
 // InitAndStart initializes verificator and ticker
 func InitAndStart(conf Config) (*verificator, error) {
-	fmt.Println("Starting verificator")
+	log.Info("Starting verificator")
 	var err error
 
 	redisClient := redis.NewClient(&redis.Options{
@@ -91,7 +91,7 @@ func InitAndStart(conf Config) (*verificator, error) {
 		myAddr:                        conf.MyAddr,
 		slackWebhookURL:               conf.SlackWebhookURL,
 		slackChannelName:              conf.SlackChannelName,
-		ticker:                        time.NewTicker(2 * time.Second),
+		ticker:                        time.NewTicker(time.Duration(conf.VerificatorTickerInterval) * time.Second),
 		tickerDone:                    make(chan bool),
 	}
 
@@ -158,7 +158,7 @@ func (v *verificator) doVerificationCheck(r *river.River) error {
 
 	mysqlMasterStatus, err := v.getMySQLMasterStatus()
 	if err != nil {
-		fmt.Println(err)
+		return err
 	}
 
 	v.suicideCount, err = v.currentSuicideCount()
@@ -175,7 +175,7 @@ func (v *verificator) doVerificationCheck(r *river.River) error {
 	}
 
 	if r.GetPosition().Pos == 0 {
-		fmt.Println("redis position 0, probably doing mysqldump")
+		log.Info("redis position 0, probably doing mysqldump")
 		return nil
 	}
 

@@ -36,7 +36,7 @@ var (
 	redisDB         = flag.Int("redisDB", 0, "Redis database")
 	redisKeyPostfix = flag.String("redisKeyPostfix", "", "Redis key postfix")
 
-	verificatorTickerInterval   = flag.Duration("verificator-ticker-interval", time.Second*10, "At which interval the verificator will run")
+	verificatorTickerInterval   = flag.Int("verificator-ticker-interval", 10, "At which interval the verificator will run (seconds)")
 	redisKeyPostfixSuicideCount = flag.String("redisKey-Postfix-SuicideCount", "", "Redis key postfix for suicide count")
 	redisKeyPostfixAllowedToRun = flag.String("redisKey-Postfix-AllowedToRun", "", "Redis key postfix for allowed to run")
 	unSyncedThreshold           = flag.Int("unsynced-threshhold", 1000, "Amount of allowed unsynced binlog bytes during n threshold seconds")

@@ -4,6 +4,8 @@ It uses `mysqldump` to fetch the origin data at first, then syncs data increment
 
 ## Execution flags
 
+**If you add more flags, run `go run cmd/go-mysql-elasticsearch/main.go -envs` to generate envs.md file. Copy paste content from there into here.**
+
 |Flag|Env. variable|Default value|Description|
 |:----|:----|:---|:---|
 |api-port|API_PORT|3000|HTTP API port number|
@@ -28,20 +30,20 @@ It uses `mysqldump` to fetch the origin data at first, then syncs data increment
 |myUser|MYUSER|root|MySQL user|
 |redisAddr|REDISADDR|127.0.0.1:6379|Redis addr|
 |redisDB|REDISDB|0|Redis database|
-|redisPass|REDISPASS||Redis password|
+|redisKey-Postfix-AllowedToRun|REDISKEY_POSTFIX_ALLOWEDTORUN||Redis key postfix for allowed to run|
+|redisKey-Postfix-SuicideCount|REDISKEY_POSTFIX_SUICIDECOUNT||Redis key postfix for suicide count|
 |redisKeyPostfix|REDISKEYPOSTFIX||Redis key postfix|
-|verificatorTickerInterval|VERIFICATOR_TICKER_INTERVAL|10s|At which interval the verificator will run|
-|redisKeyPostfixSuicideCount|REDISKEY_POSTFIX_SUICIDECOUNT||Redis key postfix for suicide count|
-|redisKeyPostfixAllowedToRun|REDISKEY_POSTFIX_ALLOWEDTORUN||Redis key postfix for allowed to run|
-|unSyncedThreshold|UNSYNCED_THRESHHOLD|1000|Amount of allowed unsynced binlog bytes during n threshold seconds|
-|secondsThreshold|UNSYNCED-THRESHHOLD-SECONDS|30|Amount of seconds during which to check unsynced-threshold|
+|redisPass|REDISPASS||Redis password|
 |serverID|SERVERID|1001|MySQL server ID, as a pseudo slave|
 |skipMasterData|SKIPMASTERDATA|false|if no privilege to use mysqldump with --master-data, we must skip it|
 |skipNoPkTable|SKIPNOPKTABLE|false|Ignore table without primary key|
-|statAddr|STATADDR|127.0.0.1:12800|Inner HTTP status address|
-|use-single-redis-db|USE_SINGLE_REDIS_DB|false|Use single Redis DB (0), dismiss brand ID in keys if different DBs|
-|slack-webhook-url|SLACK_WEBHOOK_URL||Use for sending alerts to slack|
 |slack-channel-name|SLACK_CHANNEL_NAME||Channel to send messages in|
+|slack-webhook-url|SLACK_WEBHOOK_URL||Use for sending alerts to slack|
+|statAddr|STATADDR|127.0.0.1:12800|Inner HTTP status address|
+|unsynced-threshhold|UNSYNCED_THRESHHOLD|1000|Amount of allowed unsynced binlog bytes during n threshold seconds|
+|unsynced-threshhold-seconds|UNSYNCED_THRESHHOLD_SECONDS|30|Amount of seconds during which to check unsynced-threshold|
+|use-single-redis-db|USE_SINGLE_REDIS_DB|false|Use single Redis DB (0), dismiss brand ID in keys if different DBs|
+|verificator-ticker-interval|VERIFICATOR_TICKER_INTERVAL|10|At which interval the verificator will run (seconds)|
 
 ## Install
 
