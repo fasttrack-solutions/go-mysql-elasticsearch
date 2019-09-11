@@ -39,8 +39,8 @@ var (
 	verificatorTickerInterval   = flag.Int("verificator-ticker-interval", 10, "At which interval the verificator will run (seconds)")
 	redisKeyPostfixSuicideCount = flag.String("rediskey-postfix-suicide-count", "", "Redis key postfix for suicide count")
 	redisKeyPostfixAllowedToRun = flag.String("rediskey-postfix-allowed-to-run", "", "Redis key postfix for allowed to run")
-	unSyncedThreshold           = flag.Int("unsynced-threshhold", 1000, "Amount of allowed unsynced binlog bytes during n threshold seconds")
-	secondsThreshold            = flag.Int("unsynced-threshhold-seconds", 30, "Amount of seconds during which to check unsynced-threshold")
+	unSyncedThreshold           = flag.Int("unsynced-threshold", 1000, "Amount of allowed unsynced binlog bytes during n threshold seconds")
+	secondsThreshold            = flag.Int("unsynced-threshold-seconds", 30, "Amount of seconds during which to check unsynced-threshold")
 
 	esAddr  = flag.String("esAddr", "127.0.0.1:9200", "Elasticsearch addr")
 	esUser  = flag.String("esUser", "", "Elasticsearch user")

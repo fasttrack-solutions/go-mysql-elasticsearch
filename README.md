@@ -40,8 +40,8 @@ It uses `mysqldump` to fetch the origin data at first, then syncs data increment
 |slack-channel-name|SLACK_CHANNEL_NAME||Channel to send messages in|
 |slack-webhook-url|SLACK_WEBHOOK_URL||Use for sending alerts to slack|
 |statAddr|STATADDR|127.0.0.1:12800|Inner HTTP status address|
-|unsynced-threshhold|UNSYNCED_THRESHHOLD|1000|Amount of allowed unsynced binlog bytes during n threshold seconds|
-|unsynced-threshhold-seconds|UNSYNCED_THRESHHOLD_SECONDS|30|Amount of seconds during which to check unsynced-threshold|
+|unsynced-threshold|UNSYNCED_THRESHOLD|1000|Amount of allowed unsynced binlog bytes during n threshold seconds|
+|unsynced-threshold-seconds|UNSYNCED_THRESHOLD_SECONDS|30|Amount of seconds during which to check unsynced-threshold|
 |use-single-redis-db|USE_SINGLE_REDIS_DB|false|Use single Redis DB (0), dismiss brand ID in keys if different DBs|
 |verificator-ticker-interval|VERIFICATOR_TICKER_INTERVAL|10|At which interval the verificator will run (seconds)|
 
