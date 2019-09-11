@@ -184,22 +184,13 @@ func (v *verificator) doVerificationCheck(r *river.River) error {
 
 		if secondsSinceOverdraw > float64(v.secondsThreshold) && v.suicideCount >= 2 {
 			v.setServiceAsDisallowedToRun()
-			err = v.sendSlackWarning("🔥 Shutting down shipper. Setting not allowed to run = true.")
-			if err != nil {
-				return err
-			}
+			v.sendSlackWarning("🔥 Shutting down shipper. Setting not allowed to run = true.")
 			v.commitSuicide()
 		} else if secondsSinceOverdraw > float64(v.secondsThreshold) && v.suicideCount >= 1 {
-			err = v.sendSlackWarning("⚠️ Restarting shipper go mysql due to suicide count > 1.")
-			if err != nil {
-				return err
-			}
+			v.sendSlackWarning("⚠️ Restarting shipper go mysql due to suicide count > 1.")
 			v.commitSuicide()
 		} else if secondsSinceOverdraw > float64(v.secondsThreshold) {
-			err = v.sendSlackWarning("️️⚠️ Restarting shipper go mysql.")
-			if err != nil {
-				return err
-			}
+			v.sendSlackWarning("️️⚠️ Restarting shipper go mysql.")
 			v.commitSuicide()
 		}
 	}
@@ -299,9 +290,10 @@ func (v *verificator) setDefaultRedisKey(key string, defaultValue interface{}) e
 	return nil
 }
 
-func (v *verificator) sendSlackWarning(message string) error {
+func (v *verificator) sendSlackWarning(message string) {
 	if v.slackWebhookURL == "" || v.slackChannelName == "" {
-		return errors.New("No slack url or channel name set")
+		log.Warn("Slack webhook url or slack channel name not set. Will not send slack.")
+		return
 	}
 
 	attachment1 := slack.Attachment{}
@@ -333,10 +325,10 @@ func (v *verificator) sendSlackWarning(message string) error {
 		Attachments: []slack.Attachment{attachment1},
 	}
 
-	err := slack.Send(v.slackWebhookURL, "", payload)
-	if len(err) > 0 {
-		return err[0]
+	errors := slack.Send(v.slackWebhookURL, "", payload)
+	if len(errors) > 0 {
+		for _, err := range errors {
+			log.Warnf("Failed to send slack message: %s. Error: %v", message, err)
+		}
 	}
-
-	return nil
 }
