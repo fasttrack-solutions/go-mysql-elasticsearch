@@ -67,7 +67,7 @@ func (h *eventHandler) OnDDL(nextPos mysql.Position, _ *replication.QueryEvent) 
 }
 
 func (h *eventHandler) OnXID(nextPos mysql.Position) error {
-	h.r.syncCh <- posSaver{nextPos, false}
+	h.r.syncCh <- posSaver{nextPos, true}
 	return h.r.ctx.Err()
 }
 

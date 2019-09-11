@@ -4,6 +4,8 @@ It uses `mysqldump` to fetch the origin data at first, then syncs data increment
 
 ## Execution flags
 
+**If you add more flags, run `go run cmd/go-mysql-elasticsearch/main.go -envs` to generate envs.md file. Copy paste content from there into here.**
+
 |Flag|Env. variable|Default value|Description|
 |:----|:----|:---|:---|
 |api-port|API_PORT|3000|HTTP API port number|
@@ -30,11 +32,18 @@ It uses `mysqldump` to fetch the origin data at first, then syncs data increment
 |redisDB|REDISDB|0|Redis database|
 |redisKeyPostfix|REDISKEYPOSTFIX||Redis key postfix|
 |redisPass|REDISPASS||Redis password|
+|rediskey-postfix-allowed-to-run|REDISKEY_POSTFIX_ALLOWED_TO_RUN||Redis key postfix for allowed to run|
+|rediskey-postfix-suicide-count|REDISKEY_POSTFIX_SUICIDE_COUNT||Redis key postfix for suicide count|
 |serverID|SERVERID|1001|MySQL server ID, as a pseudo slave|
 |skipMasterData|SKIPMASTERDATA|false|if no privilege to use mysqldump with --master-data, we must skip it|
 |skipNoPkTable|SKIPNOPKTABLE|false|Ignore table without primary key|
+|slack-channel-name|SLACK_CHANNEL_NAME||Channel to send messages in|
+|slack-webhook-url|SLACK_WEBHOOK_URL||Use for sending alerts to slack|
 |statAddr|STATADDR|127.0.0.1:12800|Inner HTTP status address|
+|unsynced-threshhold|UNSYNCED_THRESHHOLD|1000|Amount of allowed unsynced binlog bytes during n threshold seconds|
+|unsynced-threshhold-seconds|UNSYNCED_THRESHHOLD_SECONDS|30|Amount of seconds during which to check unsynced-threshold|
 |use-single-redis-db|USE_SINGLE_REDIS_DB|false|Use single Redis DB (0), dismiss brand ID in keys if different DBs|
+|verificator-ticker-interval|VERIFICATOR_TICKER_INTERVAL|10|At which interval the verificator will run (seconds)|
 
 ## Install
 
@@ -82,7 +91,7 @@ tables = ["t3", t4]
 
 `schema` is the database name, and `tables` includes the table need to be synced.
 
-If you want to sync **all table in database**, you can use **asterisk(\*)**.  
+If you want to sync **all table in database**, you can use **asterisk(\*)**.
 ```
 [[source]]
 schema = "test"
@@ -94,7 +103,7 @@ tables = ["*"]
 
 ## Rule
 
-By default, go-mysql-elasticsearch will use MySQL table name as the Elasticserach's index and type name, use MySQL table field name as the Elasticserach's field name.  
+By default, go-mysql-elasticsearch will use MySQL table name as the Elasticserach's index and type name, use MySQL table field name as the Elasticserach's field name.
 e.g, if a table named blog, the default index and type in Elasticserach are both named blog, if the table field named title,
 the default field name is also named title.
 
@@ -184,7 +193,7 @@ type = "tfilter"
 filter = ["id", "name"]
 ```
 
-In the above example, we will only sync MySQL table tfiler's columns `id` and `name` to Elasticsearch. 
+In the above example, we will only sync MySQL table tfiler's columns `id` and `name` to Elasticsearch.
 
 ## Ignore table without a primary key
 When you sync table without a primary key, you can see below error message.
@@ -229,7 +238,7 @@ Although there are some other MySQL rivers for Elasticsearch, like [elasticsearc
 
 ## Donate
 
-If you like the project and want to buy me a cola, you can through: 
+If you like the project and want to buy me a cola, you can through:
 
 |PayPal|微信|
 |------|---|

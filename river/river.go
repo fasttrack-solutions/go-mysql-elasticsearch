@@ -10,6 +10,7 @@ import (
 
 	"github.com/fasttrack-solutions/go-mysql-elasticsearch/elastic"
 	"github.com/fasttrack-solutions/go-mysql/canal"
+	"github.com/fasttrack-solutions/go-mysql/mysql"
 	"github.com/juju/errors"
 	"github.com/siddontang/go-log/log"
 )
@@ -315,6 +316,10 @@ func (r *River) Run() error {
 	}
 
 	return nil
+}
+
+func (r *River) GetPosition() mysql.Position {
+	return r.master.Position()
 }
 
 // Ctx returns the internal context for outside use.

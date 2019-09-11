@@ -11,7 +11,8 @@ import (
 	"github.com/alex-ant/envs"
 	"github.com/fasttrack-solutions/go-mysql-elasticsearch/api"
 	"github.com/fasttrack-solutions/go-mysql-elasticsearch/river"
-	"github.com/fasttrack-solutions/go-mysql-elasticsearch/timeTracker"
+	ttracker "github.com/fasttrack-solutions/go-mysql-elasticsearch/timeTracker"
+	"github.com/fasttrack-solutions/go-mysql-elasticsearch/verificator"
 	myc "github.com/fasttrack-solutions/go-mysql/client"
 	"github.com/juju/errors"
 	"github.com/siddontang/go-log/log"
@@ -35,6 +36,12 @@ var (
 	redisDB         = flag.Int("redisDB", 0, "Redis database")
 	redisKeyPostfix = flag.String("redisKeyPostfix", "", "Redis key postfix")
 
+	verificatorTickerInterval   = flag.Int("verificator-ticker-interval", 10, "At which interval the verificator will run (seconds)")
+	redisKeyPostfixSuicideCount = flag.String("rediskey-postfix-suicide-count", "", "Redis key postfix for suicide count")
+	redisKeyPostfixAllowedToRun = flag.String("rediskey-postfix-allowed-to-run", "", "Redis key postfix for allowed to run")
+	unSyncedThreshold           = flag.Int("unsynced-threshhold", 1000, "Amount of allowed unsynced binlog bytes during n threshold seconds")
+	secondsThreshold            = flag.Int("unsynced-threshhold-seconds", 30, "Amount of seconds during which to check unsynced-threshold")
+
 	esAddr  = flag.String("esAddr", "127.0.0.1:9200", "Elasticsearch addr")
 	esUser  = flag.String("esUser", "", "Elasticsearch user")
 	esPass  = flag.String("esPass", "", "Elasticsearch password")
@@ -54,6 +61,8 @@ var (
 
 	brandID          = flag.Int("brand-id", 0, "Brand ID")
 	useSingleRedisDB = flag.Bool("use-single-redis-db", false, "Use single Redis DB (0), dismiss brand ID in keys if different DBs")
+	slackWebhookURL  = flag.String("slack-webhook-url", "", "Use for sending alerts to slack")
+	slackChannelName = flag.String("slack-channel-name", "", "Channel to send messages in")
 
 	bulksToTrack = flag.Int("bulks-to-track", 100, "Bulk requests to keep in time tracker")
 )
@@ -154,11 +163,39 @@ func main() {
 		done <- struct{}{}
 	}()
 
+	verificatorErrorChan := make(chan error)
+	verificatorConfig := verificator.Config{
+		River:                       r,
+		VerificatorTickerInterval:   *verificatorTickerInterval,
+		BrandID:                     *brandID,
+		SlackWebhookURL:             *slackWebhookURL,
+		SlackChannelName:            *slackChannelName,
+		RedisAddr:                   *redisAddr,
+		RedisPassword:               *redisPass,
+		RedisKeyPostfixSuicideCount: *redisKeyPostfixSuicideCount,
+		RedisKeyPostfixAllowedToRun: *redisKeyPostfixAllowedToRun,
+		RedisDB:                     *redisDB,
+		MyUser:                      *myUser,
+		MyPass:                      *myPass,
+		MyAddr:                      *myAddr,
+		SecondsThreshold:            *secondsThreshold,
+		UnSyncedThreshold:           *unSyncedThreshold,
+		ErrorChan:                   verificatorErrorChan,
+	}
+	v, err := verificator.InitAndStart(verificatorConfig)
+	if err != nil {
+		log.Fatal("Could not start verificator! Err: ", err)
+	}
+
 	select {
 	case n := <-sc:
 		log.Infof("receive signal %v, closing", n)
+		v.Shutdown()
+		os.Exit(0)
 	case <-r.Ctx().Done():
 		log.Infof("context is done with %v, closing", r.Ctx().Err())
+	case err := <-verificatorErrorChan:
+		fmt.Println("Verificator error: ", err)
 	}
 
 	r.Close()
