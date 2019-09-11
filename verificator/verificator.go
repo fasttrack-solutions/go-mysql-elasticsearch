@@ -326,7 +326,7 @@ func (v *verificator) sendSlackWarning(message string) {
 	}
 
 	errors := slack.Send(v.slackWebhookURL, "", payload)
-	if len(errors) > 0 {
+	if errors != nil {
 		for _, err := range errors {
 			log.Warnf("Failed to send slack message: %s. Error: %v", message, err)
 		}
