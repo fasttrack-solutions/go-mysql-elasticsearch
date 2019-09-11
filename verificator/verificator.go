@@ -10,7 +10,7 @@ import (
 	"github.com/ashwanthkumar/slack-go-webhook"
 	"github.com/fasttrack-solutions/go-mysql-elasticsearch/river"
 	"github.com/go-redis/redis"
-	_ "github.com/go-sql-driver/mysql"
+	_ "github.com/go-sql-driver/mysql" // Importing mysql driver
 	"github.com/jmoiron/sqlx"
 	log "github.com/siddontang/go-log/log"
 )
@@ -39,7 +39,7 @@ type Config struct {
 }
 
 // Verificator is the main struct for the verificator
-type verificator struct {
+type Verificator struct {
 	suicideCount         int
 	overThresholdCounter uint32
 	zeroDate             time.Time
@@ -66,7 +66,7 @@ type verificator struct {
 }
 
 // InitAndStart initializes verificator and ticker
-func InitAndStart(conf Config) (*verificator, error) {
+func InitAndStart(conf Config) (*Verificator, error) {
 	log.Info("Starting verificator")
 	var err error
 
@@ -76,7 +76,7 @@ func InitAndStart(conf Config) (*verificator, error) {
 		DB:       conf.RedisDB,
 	})
 
-	v := verificator{
+	v := Verificator{
 		overThresholdCounter:          0,
 		zeroDate:                      time.Now(),
 		threshold:                     uint32(conf.UnSyncedThreshold),
@@ -118,13 +118,14 @@ func InitAndStart(conf Config) (*verificator, error) {
 	return &v, nil
 }
 
-func (v *verificator) Shutdown() {
+// Shutdown shuts down the verificator
+func (v *Verificator) Shutdown() {
 	log.Print("Shutting down verificator...")
 	v.redisClient.Close()
 	v.tickerDone <- true
 }
 
-func (v *verificator) doTicker(callback func()) {
+func (v *Verificator) doTicker(callback func()) {
 	for {
 		select {
 		case <-v.tickerDone:
@@ -143,7 +144,7 @@ type mysqlMasterStatus struct {
 	ExecutedGTIDSet string `db:"Executed_Gtid_Set"`
 }
 
-func (v *verificator) doVerificationCheck(r *river.River) error {
+func (v *Verificator) doVerificationCheck(r *river.River) error {
 	var err error
 
 	v.allowedToRun, err = v.serviceIsAllowedToRun()
@@ -198,7 +199,7 @@ func (v *verificator) doVerificationCheck(r *river.River) error {
 	return nil
 }
 
-func (v *verificator) getMySQLMasterStatus() (mysqlMasterStatus, error) {
+func (v *Verificator) getMySQLMasterStatus() (mysqlMasterStatus, error) {
 	var status mysqlMasterStatus
 
 	connStr := fmt.Sprintf("%s:%s@tcp(%s)/?parseTime=true", v.myUser, v.myPass, v.myAddr)
@@ -216,7 +217,7 @@ func (v *verificator) getMySQLMasterStatus() (mysqlMasterStatus, error) {
 	return status, nil
 }
 
-func (v *verificator) commitSuicide() {
+func (v *Verificator) commitSuicide() {
 	v.redisClient.Incr(v.suicideCountRedisKey)
 	log.Fatal("terminating service")
 }
@@ -225,12 +226,12 @@ func positionsDiff(mysqlPos, redisPos uint32) uint32 {
 	return mysqlPos - redisPos
 }
 
-func (v *verificator) secondsUnsynced() float64 {
+func (v *Verificator) secondsUnsynced() float64 {
 	diff := time.Now().Sub(v.zeroDate).Seconds()
 	return diff
 }
 
-func (v *verificator) currentSuicideCount() (int, error) {
+func (v *Verificator) currentSuicideCount() (int, error) {
 	res, err := v.redisClient.Get(v.suicideCountRedisKey).Result()
 	if err == redis.Nil {
 		err := v.setDefaultRedisKey(v.suicideCountRedisKey, "0")
@@ -250,7 +251,7 @@ func (v *verificator) currentSuicideCount() (int, error) {
 	return count, nil
 }
 
-func (v *verificator) resetSuicideCount() error {
+func (v *Verificator) resetSuicideCount() error {
 	_, err := v.redisClient.Set(v.suicideCountRedisKey, 0, NoTTL).Result()
 	if err != nil {
 		return err
@@ -258,7 +259,7 @@ func (v *verificator) resetSuicideCount() error {
 	return nil
 }
 
-func (v *verificator) serviceIsAllowedToRun() (bool, error) {
+func (v *Verificator) serviceIsAllowedToRun() (bool, error) {
 	res, err := v.redisClient.Get(v.serviceIsAllowedToRunRedisKey).Result()
 	if err == redis.Nil {
 		err := v.setDefaultRedisKey(v.serviceIsAllowedToRunRedisKey, "1")
@@ -274,7 +275,7 @@ func (v *verificator) serviceIsAllowedToRun() (bool, error) {
 	return valBool, nil
 }
 
-func (v *verificator) setServiceAsDisallowedToRun() error {
+func (v *Verificator) setServiceAsDisallowedToRun() error {
 	_, err := v.redisClient.Set(v.serviceIsAllowedToRunRedisKey, "0", NoTTL).Result()
 	if err != nil {
 		return err
@@ -282,7 +283,7 @@ func (v *verificator) setServiceAsDisallowedToRun() error {
 	return nil
 }
 
-func (v *verificator) setDefaultRedisKey(key string, defaultValue interface{}) error {
+func (v *Verificator) setDefaultRedisKey(key string, defaultValue interface{}) error {
 	_, err := v.redisClient.Set(key, defaultValue, NoTTL).Result()
 	if err != nil {
 		return err
@@ -290,7 +291,7 @@ func (v *verificator) setDefaultRedisKey(key string, defaultValue interface{}) e
 	return nil
 }
 
-func (v *verificator) sendSlackWarning(message string) {
+func (v *Verificator) sendSlackWarning(message string) {
 	if v.slackWebhookURL == "" || v.slackChannelName == "" {
 		log.Warn("Slack webhook url or slack channel name not set. Will not send slack.")
 		return
