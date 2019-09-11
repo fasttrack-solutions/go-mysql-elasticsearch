@@ -30,10 +30,10 @@ It uses `mysqldump` to fetch the origin data at first, then syncs data increment
 |myUser|MYUSER|root|MySQL user|
 |redisAddr|REDISADDR|127.0.0.1:6379|Redis addr|
 |redisDB|REDISDB|0|Redis database|
-|redisKey-Postfix-AllowedToRun|REDISKEY_POSTFIX_ALLOWEDTORUN||Redis key postfix for allowed to run|
-|redisKey-Postfix-SuicideCount|REDISKEY_POSTFIX_SUICIDECOUNT||Redis key postfix for suicide count|
 |redisKeyPostfix|REDISKEYPOSTFIX||Redis key postfix|
 |redisPass|REDISPASS||Redis password|
+|rediskey-postfix-allowed-to-run|REDISKEY_POSTFIX_ALLOWED_TO_RUN||Redis key postfix for allowed to run|
+|rediskey-postfix-suicide-count|REDISKEY_POSTFIX_SUICIDE_COUNT||Redis key postfix for suicide count|
 |serverID|SERVERID|1001|MySQL server ID, as a pseudo slave|
 |skipMasterData|SKIPMASTERDATA|false|if no privilege to use mysqldump with --master-data, we must skip it|
 |skipNoPkTable|SKIPNOPKTABLE|false|Ignore table without primary key|

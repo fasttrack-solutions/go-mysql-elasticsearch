@@ -37,8 +37,8 @@ var (
 	redisKeyPostfix = flag.String("redisKeyPostfix", "", "Redis key postfix")
 
 	verificatorTickerInterval   = flag.Int("verificator-ticker-interval", 10, "At which interval the verificator will run (seconds)")
-	redisKeyPostfixSuicideCount = flag.String("redisKey-Postfix-SuicideCount", "", "Redis key postfix for suicide count")
-	redisKeyPostfixAllowedToRun = flag.String("redisKey-Postfix-AllowedToRun", "", "Redis key postfix for allowed to run")
+	redisKeyPostfixSuicideCount = flag.String("rediskey-postfix-suicide-count", "", "Redis key postfix for suicide count")
+	redisKeyPostfixAllowedToRun = flag.String("rediskey-postfix-allowed-to-run", "", "Redis key postfix for allowed to run")
 	unSyncedThreshold           = flag.Int("unsynced-threshhold", 1000, "Amount of allowed unsynced binlog bytes during n threshold seconds")
 	secondsThreshold            = flag.Int("unsynced-threshhold-seconds", 30, "Amount of seconds during which to check unsynced-threshold")
 
@@ -191,6 +191,7 @@ func main() {
 	case n := <-sc:
 		log.Infof("receive signal %v, closing", n)
 		v.Shutdown()
+		os.Exit(0)
 	case <-r.Ctx().Done():
 		log.Infof("context is done with %v, closing", r.Ctx().Err())
 	case err := <-verificatorErrorChan:

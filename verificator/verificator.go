@@ -3,7 +3,6 @@ package verificator
 import (
 	"errors"
 	"fmt"
-	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -123,7 +122,6 @@ func (v *verificator) Shutdown() {
 	log.Print("Shutting down verificator...")
 	v.redisClient.Close()
 	v.tickerDone <- true
-	os.Exit(0)
 }
 
 func (v *verificator) doTicker(callback func()) {
