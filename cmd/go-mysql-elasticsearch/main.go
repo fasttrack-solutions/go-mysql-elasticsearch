@@ -124,8 +124,10 @@ func main() {
 	// Add brand ID to Redis key suffix if single DB mode selected and force 0 DB.
 	cfg.RedisKeyPostfix = *redisKeyPostfix
 	if *useSingleRedisDB {
-		cfg.RedisKeyPostfix += fmt.Sprintf("_%d", *brandID)
+		cfg.RedisKeyPostfix += fmt.Sprintf(":%d", *brandID)
 		cfg.RedisDB = 0
+		*redisKeyPostfixSuicideCount += fmt.Sprintf(":%d", *brandID)
+		*redisKeyPostfixAllowedToRun += fmt.Sprintf(":%d", *brandID)
 	}
 
 	// Reconnect to MySQL.
