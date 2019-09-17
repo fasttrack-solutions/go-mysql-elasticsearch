@@ -138,7 +138,7 @@ func (r *River) syncLoop() {
 		needFlush := false
 		needSavePos := false
 
-		f := func() {
+		forceSave := func() {
 			needFlush = true
 			needSavePos = true
 		}
@@ -147,9 +147,9 @@ func (r *River) syncLoop() {
 		case v := <-r.syncCh:
 			switch v := v.(type) {
 			case posSaver:
-				pos = v.pos
 				if v.force {
-					f()
+					pos = v.pos
+					forceSave()
 				}
 			case []*elastic.BulkRequest:
 				reqs = append(reqs, v...)
@@ -158,7 +158,7 @@ func (r *River) syncLoop() {
 		case <-ticker.C:
 			needFlush = true
 		case <-resetTicker.C:
-			f()
+			forceSave()
 		case <-r.ctx.Done():
 			return
 		}
