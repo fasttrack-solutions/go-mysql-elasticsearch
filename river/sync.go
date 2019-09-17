@@ -147,8 +147,8 @@ func (r *River) syncLoop() {
 		case v := <-r.syncCh:
 			switch v := v.(type) {
 			case posSaver:
+				pos = v.pos
 				if v.force {
-					pos = v.pos
 					forceSave()
 				}
 			case []*elastic.BulkRequest:
