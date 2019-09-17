@@ -67,7 +67,7 @@ func (h *eventHandler) OnDDL(nextPos mysql.Position, _ *replication.QueryEvent) 
 }
 
 func (h *eventHandler) OnXID(nextPos mysql.Position) error {
-	h.r.syncCh <- posSaver{nextPos, true}
+	h.r.syncCh <- posSaver{nextPos, false}
 	return h.r.ctx.Err()
 }
 
@@ -127,7 +127,9 @@ func (r *River) syncLoop() {
 	defer ticker.Stop()
 	defer r.wg.Done()
 
-	lastSavedTime := time.Now()
+	resetTicker := time.NewTicker(3 * time.Second)
+	defer resetTicker.Stop()
+
 	reqs := make([]*elastic.BulkRequest, 0, 1024)
 
 	var pos mysql.Position
@@ -136,16 +138,18 @@ func (r *River) syncLoop() {
 		needFlush := false
 		needSavePos := false
 
+		f := func() {
+			needFlush = true
+			needSavePos = true
+		}
+
 		select {
 		case v := <-r.syncCh:
 			switch v := v.(type) {
 			case posSaver:
-				now := time.Now()
-				if v.force || now.Sub(lastSavedTime) > 3*time.Second {
-					lastSavedTime = now
-					needFlush = true
-					needSavePos = true
-					pos = v.pos
+				pos = v.pos
+				if v.force {
+					f()
 				}
 			case []*elastic.BulkRequest:
 				reqs = append(reqs, v...)
@@ -153,6 +157,8 @@ func (r *River) syncLoop() {
 			}
 		case <-ticker.C:
 			needFlush = true
+		case <-resetTicker.C:
+			f()
 		case <-r.ctx.Done():
 			return
 		}
