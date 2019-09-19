@@ -1,7 +1,6 @@
 package verificator
 
 import (
-	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -45,7 +44,6 @@ type Verificator struct {
 	zeroDate             time.Time
 	threshold            uint32
 	secondsThreshold     int
-	allowedToRun         bool
 	currentBinLogDiff    uint32
 
 	redisClient                   *redis.Client
@@ -147,14 +145,6 @@ type mysqlMasterStatus struct {
 func (v *Verificator) doVerificationCheck(r *river.River) error {
 	var err error
 
-	v.allowedToRun, err = v.serviceIsAllowedToRun()
-	if err != nil {
-		return err
-	}
-	if !v.allowedToRun {
-		return errors.New("Service is not allowed to run")
-	}
-
 	mysqlMasterStatus, err := v.getMySQLMasterStatus()
 	if err != nil {
 		return err
@@ -185,7 +175,7 @@ func (v *Verificator) doVerificationCheck(r *river.River) error {
 
 		if secondsSinceOverdraw > float64(v.secondsThreshold) && v.suicideCount >= 2 {
 			v.setServiceAsDisallowedToRun()
-			v.sendSlackWarning("🔥 Shutting down shipper. Setting not allowed to run = true.")
+			v.sendSlackWarning("🔥 Restarting shipper. Setting not allowed to run = true.")
 			v.commitSuicide()
 		} else if secondsSinceOverdraw > float64(v.secondsThreshold) && v.suicideCount >= 1 {
 			v.sendSlackWarning("⚠️ Restarting shipper go mysql due to suicide count > 1.")
@@ -257,22 +247,6 @@ func (v *Verificator) resetSuicideCount() error {
 		return err
 	}
 	return nil
-}
-
-func (v *Verificator) serviceIsAllowedToRun() (bool, error) {
-	res, err := v.redisClient.Get(v.serviceIsAllowedToRunRedisKey).Result()
-	if err == redis.Nil {
-		err := v.setDefaultRedisKey(v.serviceIsAllowedToRunRedisKey, "1")
-		if err != nil {
-			return false, err
-		}
-		return true, nil
-	} else if err != nil {
-		return false, err
-	}
-
-	valBool, err := strconv.ParseBool(res)
-	return valBool, nil
 }
 
 func (v *Verificator) setServiceAsDisallowedToRun() error {
