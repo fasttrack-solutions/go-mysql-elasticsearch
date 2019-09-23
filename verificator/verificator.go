@@ -37,6 +37,11 @@ type Config struct {
 	ErrorChan                   chan (error)
 }
 
+type sync struct {
+	LastMeasureDate time.Time
+	RedisBinLogPos  uint32
+}
+
 // Verificator is the main struct for the verificator
 type Verificator struct {
 	suicideCount         int
@@ -45,6 +50,7 @@ type Verificator struct {
 	threshold            uint32
 	secondsThreshold     int
 	currentBinLogDiff    uint32
+	lastSync             sync
 
 	redisClient                   *redis.Client
 	suicideCountRedisKey          string
@@ -168,6 +174,17 @@ func (v *Verificator) doVerificationCheck(r *river.River) error {
 		return nil
 	}
 
+	secondsSinceLastSync := time.Now().Sub(v.lastSync.LastMeasureDate).Seconds()
+	bytesSyncedSinceLastRun := r.GetPosition().Pos - v.lastSync.RedisBinLogPos
+	currentSyncSpeed := float64(bytesSyncedSinceLastRun) / secondsSinceLastSync
+	fmt.Println("current sync speed: ", currentSyncSpeed, " bytes per second")
+
+	if currentSyncSpeed > 0 {
+		v.lastSync.LastMeasureDate = time.Now()
+		v.lastSync.RedisBinLogPos = r.GetPosition().Pos
+		return nil
+	}
+
 	if v.overThresholdCounter == 0 {
 		v.resetSuicideCount()
 	} else if v.overThresholdCounter > 0 {
@@ -185,6 +202,9 @@ func (v *Verificator) doVerificationCheck(r *river.River) error {
 			v.commitSuicide()
 		}
 	}
+
+	v.lastSync.LastMeasureDate = time.Now()
+	v.lastSync.RedisBinLogPos = r.GetPosition().Pos
 
 	return nil
 }
