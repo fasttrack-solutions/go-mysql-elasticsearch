@@ -45,6 +45,7 @@ type Verificator struct {
 	threshold            uint32
 	secondsThreshold     int
 	currentBinLogDiff    uint32
+	lastSyncedRedisPos   uint32
 
 	redisClient                   *redis.Client
 	suicideCountRedisKey          string
@@ -168,6 +169,13 @@ func (v *Verificator) doVerificationCheck(r *river.River) error {
 		return nil
 	}
 
+	bytesSyncedSinceLastRun := r.GetPosition().Pos - v.lastSyncedRedisPos
+
+	if bytesSyncedSinceLastRun > 0 {
+		v.lastSyncedRedisPos = r.GetPosition().Pos
+		return nil
+	}
+
 	if v.overThresholdCounter == 0 {
 		v.resetSuicideCount()
 	} else if v.overThresholdCounter > 0 {
@@ -185,6 +193,8 @@ func (v *Verificator) doVerificationCheck(r *river.River) error {
 			v.commitSuicide()
 		}
 	}
+
+	v.lastSyncedRedisPos = r.GetPosition().Pos
 
 	return nil
 }
