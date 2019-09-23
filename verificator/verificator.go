@@ -170,7 +170,6 @@ func (v *Verificator) doVerificationCheck(r *river.River) error {
 	}
 
 	bytesSyncedSinceLastRun := r.GetPosition().Pos - v.lastSyncedRedisPos
-	fmt.Println("Bytes synced since last run: ", bytesSyncedSinceLastRun)
 
 	if bytesSyncedSinceLastRun > 0 {
 		v.lastSyncedRedisPos = r.GetPosition().Pos
